@@ -28,7 +28,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = color ?? AppColors.darkBlue;
     final bColor = borderColor ?? bgColor;
-    final radius = BorderRadius.circular(10);
+    final radius = BorderRadius.circular(15);
 
     return SizedBox(
       width: width ?? double.infinity,
@@ -43,15 +43,18 @@ class CustomButton extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: radius,
-              border: filled ? null : Border.all(color: bColor.withOpacity(0.6), width: 1.2),
+              border: filled
+                  ? null
+                  : Border.all(color: bColor.withOpacity(0.6), width: 1.2),
             ),
             alignment: Alignment.center,
             child: Text(
               text,
-              style: textStyle ??
+              style:
+                  textStyle ??
                   TextStyle(
                     color: filled ? Colors.white : bColor,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
             ),

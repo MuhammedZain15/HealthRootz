@@ -15,7 +15,7 @@ class RegisterPage extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(height: 100),
+          SizedBox(height: 150),
           GifView.asset(
             Assets.imagesHealthRootz,
             height: 200,
@@ -52,9 +52,9 @@ class RegisterPage extends StatelessWidget {
               fontSize: 18,
             ),
           ),
-          SizedBox(height: 120),
+          SizedBox(height: 130),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 29.0),
             child: Column(
               children: [
                 CustomButton(
