@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/features/auth/sign_in/sign_in_page.dart';
+import 'package:grad_project/features/auth/sign_up/sign_up_page.dart';
 import 'package:grad_project/features/auth/widgets/custom_button.dart';
 
 import '../../generated/assets.dart';
@@ -61,7 +63,10 @@ class RegisterPage extends StatelessWidget {
                   text: 'Sign In',
                   color: Color(0xff43A4F4),
                   onPressed: () {
-                    // navigate or handle sign in
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignInPage()),
+                    );
                   },
                   filled: true,
                   height: 48,
@@ -71,7 +76,10 @@ class RegisterPage extends StatelessWidget {
                 CustomButton(
                   text: 'Sign Up',
                   onPressed: () {
-                    // navigate to sign up
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpPage()),
+                    );
                   },
                   filled: false,
                   height: 48,
