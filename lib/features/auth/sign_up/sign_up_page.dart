@@ -136,13 +136,15 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Enter email';
+                            }
                             final email = v.trim();
                             if (!RegExp(
                               r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(email))
+                            ).hasMatch(email)) {
                               return 'Enter a valid email';
+                            }
                             return null;
                           },
                         ),
@@ -168,8 +170,9 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Enter age';
+                            }
                             final n = int.tryParse(v.trim());
                             if (n == null || n <= 0) return 'Enter a valid age';
                             return null;
@@ -221,7 +224,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         const SizedBox(height: 6),
                         DropdownButtonFormField<String>(
 
-                          value: _role,
+                          initialValue: _role,
                           items: const [
                             DropdownMenuItem(
                               value: 'patient',
