@@ -105,8 +105,9 @@ class _SignInPageState extends State<SignInPage> {
                                 ),
                               ),
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Enter email';
+                                }
                                 if (!RegExp(
                                   r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                                 ).hasMatch(v.trim())) {
@@ -147,8 +148,9 @@ class _SignInPageState extends State<SignInPage> {
                                 ),
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Enter password';
+                                }
                                 if (v.length < 6) return 'Password too short';
                                 return null;
                               },

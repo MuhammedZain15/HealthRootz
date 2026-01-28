@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/features/auth/register_page.dart';
-import 'package:grad_project/splash.dart';
+
 
 import 'features/layout.dart';
 
@@ -18,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(scaffoldBackgroundColor: Colors.white),
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: const RegisterPage(),
+      home: const AppLayout(),
     );
   }
 }
