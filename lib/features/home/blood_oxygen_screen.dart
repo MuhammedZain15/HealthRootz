@@ -38,15 +38,15 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
       xValue = 0;
     });
 
-    timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+    timer = Timer.periodic(const Duration(milliseconds: 200), (_) {
       final random = Random();
-      // SpO2 usually stays between 95-100
-      currentSpo2 = 95 + random.nextInt(6);
+      // More realistic SpO2 fluctuation (usually stays between 95-99)
+      currentSpo2 = 96 + (sin(xValue * 0.3) * 1.5).toInt() + random.nextInt(2);
 
-      xValue += 1;
+      xValue += 0.5;
       spots.add(FlSpot(xValue, currentSpo2.toDouble()));
 
-      if (spots.length > 20) {
+      if (spots.length > 30) {
         spots.removeAt(0);
       }
 
@@ -116,21 +116,29 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
                       height: width * 0.45,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.blue, width: 8),
+                        border: Border.all(color: Colors.blue.withOpacity(0.2), width: 8),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isMeasuring ? "$currentSpo2" : "--",
-                            style: TextStyle(
-                              fontSize: width * 0.12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                      child: Container(
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.blue, width: 4),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.bubble_chart, color: Colors.blue, size: width * 0.08),
+                            Text(
+                              isMeasuring ? "$currentSpo2" : "--",
+                              style: TextStyle(
+                                fontSize: width * 0.12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
                             ),
-                          ),
-                          const Text("% SpO2"),
-                        ],
+                            const Text("% SpO2", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -146,10 +154,11 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(width * 0.03),
                         ),
+                        elevation: 0,
                       ),
-                      child: const Text(
-                        "Start Measurement",
-                        style: TextStyle(
+                      child: Text(
+                        isMeasuring ? "Measuring..." : "Start Measurement",
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -162,19 +171,44 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
               SizedBox(height: height * 0.03),
 
               /// Tabs
-              Row(
-                children: [
-                  _buildTab("History Graph", true, width),
-                  _buildTab("Health Chat", false, width),
-                ],
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    _buildTab("History Graph", true, width),
+                    _buildTab("Health Chat", false, width),
+                  ],
+                ),
               ),
 
               SizedBox(height: height * 0.03),
 
               /// Content
-              isHistorySelected
-                  ? _buildGraph(width, height)
-                  : _buildHealthChat(width, height),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: isHistorySelected
+                    ? _buildGraph(width, height)
+                    : _buildHealthChat(width, height),
+              ),
+
+              SizedBox(height: height * 0.03),
+
+              /// Export Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildExportButton("Export Current", Icons.download, width),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildExportButton("Export All", Icons.file_download, width),
+                  ),
+                ],
+              ),
 
               SizedBox(height: height * 0.05),
             ],
@@ -191,17 +225,24 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
         onTap: () => setState(() => isHistorySelected = history),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.grey[200],
+            color: selected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: selected ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ] : null,
           ),
           child: Center(
             child: Text(
               text,
               style: TextStyle(
-                fontWeight: FontWeight.w600,
+                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
                 fontSize: width * 0.035,
+                color: selected ? Colors.black : Colors.grey[600],
               ),
             ),
           ),
@@ -212,10 +253,11 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
 
   Widget _buildGraph(double width, double height) {
     return Container(
-      padding: EdgeInsets.all(width * 0.04),
+      key: const ValueKey("graph"),
+      padding: EdgeInsets.only(top: width * 0.06, right: width * 0.06, bottom: width * 0.02, left: width * 0.02),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(width * 0.04),
+        borderRadius: BorderRadius.circular(width * 0.05),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -223,21 +265,49 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
           ),
         ],
       ),
-      height: height * 0.3,
+      height: height * 0.35,
       child: LineChart(
         LineChartData(
           minY: 90,
           maxY: 100,
-          gridData: FlGridData(show: true),
-          titlesData: FlTitlesData(show: false),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.grey.withOpacity(0.1),
+              strokeWidth: 1,
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) => Text(
+                  "${value.toInt()}",
+                  style: TextStyle(color: Colors.grey, fontSize: width * 0.025),
+                ),
+              ),
+            ),
+          ),
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
-              spots: spots,
+              spots: spots.isEmpty ? [const FlSpot(0, 98)] : spots,
               isCurved: true,
+              curveSmoothness: 0.5,
               color: Colors.blue,
               barWidth: 3,
-              dotData: FlDotData(show: false),
+              isStrokeCapRound: true,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blue.withOpacity(0.1),
+              ),
             ),
           ],
         ),
@@ -247,10 +317,11 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
 
   Widget _buildHealthChat(double width, double height) {
     return Container(
+      key: const ValueKey("chat"),
       padding: EdgeInsets.all(width * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(width * 0.04),
+        borderRadius: BorderRadius.circular(width * 0.05),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -261,48 +332,109 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Ask me anything about your blood oxygen!",
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.blue[50],
+                child: const Icon(Icons.support_agent, color: Colors.blue),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                "Health Assistant",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          if (_messages.isNotEmpty)
-            Column(
-              children: _messages.map((msg) => Align(
+          const Divider(height: 32),
+          if (_messages.isEmpty)
+             const Padding(
+               padding: EdgeInsets.symmetric(vertical: 20),
+               child: Center(
+                 child: Text(
+                   "Ask me about your oxygen levels!",
+                   style: TextStyle(color: Colors.grey),
+                 ),
+               ),
+             )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => Align(
                 alignment: Alignment.centerRight,
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(16).copyWith(bottomRight: Radius.zero),
                   ),
-                  child: Text(msg),
+                  child: Text(
+                    _messages[index],
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              )).toList(),
+              ),
             ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _chatController,
                   decoration: InputDecoration(
-                    hintText: "Describe your symptoms...",
+                    hintText: "Type a message...",
+                    filled: true,
+                    fillColor: Colors.grey[100],
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
-              const SizedBox(width: 10),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.blue),
-                onPressed: _sendMessage,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.send, color: Colors.white, size: 20),
+                ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildExportButton(String title, IconData icon, double width) {
+    return ElevatedButton.icon(
+      onPressed: () {},
+      icon: Icon(icon, color: Colors.black, size: width * 0.045),
+      label: Text(
+        title,
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: width * 0.035,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        ),
       ),
     );
   }
