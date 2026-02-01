@@ -1,8 +1,9 @@
 // dart
 import 'package:flutter/material.dart';
+import 'package:grad_project/patient/features/auth/register_page.dart';
 
 import 'app_colors.dart';
-import 'features/auth/register_page.dart';
+
 import 'generated/assets.dart';
 
 class SplashScreen extends StatefulWidget {

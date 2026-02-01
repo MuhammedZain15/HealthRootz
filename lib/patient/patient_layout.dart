@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/features/profile/profile_page.dart';
+import 'package:grad_project/patient/features/profile/profile_page.dart';
 
-import 'alerts/alert_page.dart';
-import 'history/history_page.dart';
-import 'home/home_page.dart';
+
+import 'features/alerts/alert_page.dart';
+import 'features/history/history_page.dart';
+import 'features/home/home_page.dart';
 
 class AppLayout extends StatefulWidget {
   const AppLayout({super.key});
