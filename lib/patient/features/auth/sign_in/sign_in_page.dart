@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/features/auth/sign_up/sign_up_page.dart';
-import 'package:grad_project/features/auth/widgets/custom_button.dart';
-import 'package:grad_project/features/layout.dart';
+
+import '../../../patient_layout.dart';
+import '../sign_up/sign_up_page.dart';
+import '../widgets/custom_button.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});

@@ -1,10 +1,11 @@
 // dart
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/features/auth/widgets/custom_button.dart';
-import 'package:grad_project/features/layout.dart';
 
+
+import '../../../patient_layout.dart';
 import '../sign_in/sign_in_page.dart';
+import '../widgets/custom_button.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});

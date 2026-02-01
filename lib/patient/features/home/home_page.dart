@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/features/home/widgets.dart';
-import 'package:grad_project/features/home/heart_rate_screen.dart';
-import 'package:grad_project/features/home/blood_oxygen_screen.dart';
+
+import 'package:grad_project/patient/features/home/widgets.dart';
+
+import 'blood_oxygen_screen.dart';
+import 'heart_rate_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/features/auth/sign_in/sign_in_page.dart';
-import 'package:grad_project/features/auth/sign_up/sign_up_page.dart';
-import 'package:grad_project/features/auth/widgets/custom_button.dart';
 
-import '../../generated/assets.dart';
+import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
+import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+
+import '../../../generated/assets.dart';
+
+
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -54,7 +56,7 @@ class RegisterPage extends StatelessWidget {
               fontSize: 18,
             ),
           ),
-          SizedBox(height: 130),
+          SizedBox(height: 160),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 29.0),
             child: Column(
@@ -72,18 +74,7 @@ class RegisterPage extends StatelessWidget {
                   height: 48,
                   // optional: width: 300,
                 ),
-                const SizedBox(height: 12),
-                CustomButton(
-                  text: 'Sign Up',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUpPage()),
-                    );
-                  },
-                  filled: false,
-                  height: 48,
-                ),
+
               ],
             ),
           ),
