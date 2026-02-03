@@ -73,6 +73,7 @@ class PatientDetailsPage extends StatelessWidget {
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: Column(
+
           children: [
             // Header
             Container(
