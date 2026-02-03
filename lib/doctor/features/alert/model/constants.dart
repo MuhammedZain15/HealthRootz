@@ -1,0 +1,80 @@
+import '../../patients/model/patient_model.dart';
+import 'alert_model.dart';
+
+final List<DoctorAlert> alerts = [
+  DoctorAlert(
+    id: '1',
+    patient: Patient(
+      id: 'p1',
+      name: 'Emily Rodriguez',
+      age: 32,
+      status: 'Critical',
+      heartRate: 125,
+      emgReading: 0,
+    ),
+    type: AlertType.heartRate,
+    severity: AlertSeverity.critical,
+    message: 'Heart rate critically high at 125 bpm',
+    time: DateTime(2025, 12, 31, 10, 45),
+  ),
+  DoctorAlert(
+    id: '2',
+    patient: Patient(
+      id: 'p2',
+      name: 'Robert Martinez',
+      age: 45,
+      status: 'Critical',
+      heartRate: 80,
+      emgReading: 0,
+    ),
+    type: AlertType.bloodPressure,
+    severity: AlertSeverity.critical,
+    message: 'Blood pressure spike detected: 185/115',
+    time: DateTime(2025, 12, 31, 10, 20),
+  ),
+  DoctorAlert(
+    id: '3',
+    patient: Patient(
+      id: 'p3',
+      name: 'James Wilson',
+      age: 28,
+      status: 'Warning',
+      heartRate: 90,
+      emgReading: 0,
+    ),
+    type: AlertType.temperature,
+    severity: AlertSeverity.warning,
+    message: 'Temperature elevated: 99.8°F',
+    time: DateTime(2025, 12, 31, 7, 30),
+  ),
+  DoctorAlert(
+    id: '4',
+    patient: Patient(
+      id: 'p4',
+      name: 'John Anderson',
+      age: 55,
+      status: 'Stable',
+      heartRate: 72,
+      emgReading: 0,
+    ),
+    type: AlertType.heartRate,
+    severity: AlertSeverity.resolved,
+    message: 'Heart rate normalized',
+    time: DateTime(2025, 12, 30, 22, 30),
+  ),
+  DoctorAlert(
+    id: '5',
+    patient: Patient(
+      id: 'p5',
+      name: 'Patricia Davis',
+      age: 62,
+      status: 'Stable',
+      heartRate: 70,
+      emgReading: 0,
+    ),
+    type: AlertType.heartRate,
+    severity: AlertSeverity.resolved,
+    message: 'Heart rate normalized',
+    time: DateTime(2025, 12, 30, 21, 15),
+  ),
+];
