@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/doctor/features/home/booked_appointments_page.dart';
+import 'package:grad_project/doctor/features/home/add_patient_page.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key});
@@ -23,7 +24,12 @@ class QuickActions extends StatelessWidget {
           const SizedBox(height: 16),
           _buildActionButton(
             label: "Add New Patient",
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddPatientPage()),
+              );
+            },
             isPrimary: true,
           ),
           const SizedBox(height: 12),
@@ -66,7 +72,9 @@ class QuickActions extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: isPrimary ? BorderSide.none : BorderSide(color: Colors.grey.withOpacity(0.2)),
+            side: isPrimary
+                ? BorderSide.none
+                : BorderSide(color: Colors.grey.withOpacity(0.2)),
           ),
         ),
         child: Text(

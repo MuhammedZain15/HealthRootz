@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/doctor/features/home/model/constant.dart';
-import 'package:grad_project/doctor/features/home/widgets/appointment_card.dart';
-import 'package:grad_project/doctor/features/home/widgets/appointment_filters.dart';
+import 'package:grad_project/doctor/features/home/widgets/appointment_page_widgets/appointment_card.dart';
+import 'package:grad_project/doctor/features/home/widgets/appointment_page_widgets/appointment_filters.dart';
 
 class BookedAppointmentsPage extends StatefulWidget {
   const BookedAppointmentsPage({super.key});
