@@ -19,14 +19,24 @@ class DoctorAppLayout extends StatefulWidget {
 class _AppLayoutState extends State<DoctorAppLayout> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    DoctorHomePage(),
-    PatientPage(),
-    DoctorAlertPage(),
-    ReportsPage(),
-    DoctorChatPage(),
-    DoctorProfilePage(),
-  ];
+  // Profile State
+  String name = "Dr. Anderson";
+  String email = "anderson@healthrootz.com";
+  String phone = "+1 (555) 123-4567";
+  String specialty = "Cardiology";
+  String licenseNumber = "MD-123456";
+  String address = "123 Medical Center, New York, NY 10001";
+
+  void _updateProfile(Map<String, String> newData) {
+    setState(() {
+      name = newData['name'] ?? name;
+      email = newData['email'] ?? email;
+      phone = newData['phone'] ?? phone;
+      specialty = newData['specialty'] ?? specialty;
+      licenseNumber = newData['licenseNumber'] ?? licenseNumber;
+      address = newData['address'] ?? address;
+    });
+  }
 
   void _onItemTapped(int index) {
     if (_selectedIndex == index) return;
@@ -35,16 +45,35 @@ class _AppLayoutState extends State<DoctorAppLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      DoctorHomePage(doctorName: name),
+      const PatientPage(),
+      const DoctorAlertPage(),
+      const ReportsPage(),
+      const DoctorChatPage(),
+      DoctorProfilePage(
+        initialData: {
+          'name': name,
+          'email': email,
+          'phone': phone,
+          'specialty': specialty,
+          'licenseNumber': licenseNumber,
+          'address': address,
+        },
+        onProfileUpdate: _updateProfile,
+      ),
+    ];
+
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
+
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.skyBlue,
-        // or Color(0xff38B6FF)
-        unselectedItemColor: Color(0xff6B7280),
+        unselectedItemColor: const Color(0xff6B7280),
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         items: const [
           BottomNavigationBarItem(
