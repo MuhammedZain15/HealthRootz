@@ -67,6 +67,7 @@ class _AppLayoutState extends State<DoctorAppLayout> {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
+
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
