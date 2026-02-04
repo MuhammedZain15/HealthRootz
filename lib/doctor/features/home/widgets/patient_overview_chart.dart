@@ -1,8 +1,18 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-class PatientOverviewChart extends StatelessWidget {
+class PatientOverviewChart extends StatefulWidget {
   const PatientOverviewChart({super.key});
+
+  @override
+  State<PatientOverviewChart> createState() => _PatientOverviewChartState();
+}
+
+class _PatientOverviewChartState extends State<PatientOverviewChart> {
+  int touchedIndex = 3; // Default to Emma W.
+
+  final List<String> names = ['John S.', 'Sarah J.', 'Mike B.', 'Emma W.', 'David L.'];
+  final List<double> ratings = [85, 62, 78, 92, 58];
 
   @override
   Widget build(BuildContext context) {
@@ -23,84 +33,94 @@ class PatientOverviewChart extends StatelessWidget {
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: Stack(
-              children: [
-                BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: 100,
-                    barTouchData: BarTouchData(enabled: false),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            const titles = ['John S.', 'Sarah J.', 'Mike B.', 'Emma W.', 'David L.'];
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                titles[value.toInt()],
-                                style: const TextStyle(color: Colors.grey, fontSize: 10),
-                              ),
-                            );
-                          },
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: 100,
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (group) => Colors.white,
+                    tooltipBorder: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        '${names[groupIndex]}\n',
+                        const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
-                      ),
-                      leftTitles: AxisTitles(
-                        axisNameWidget: const Text("Health Rating", style: TextStyle(fontSize: 10)),
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 30,
-                          getTitlesWidget: (value, meta) {
-                            if (value % 25 == 0) {
-                              return Text(value.toInt().toString(), style: const TextStyle(color: Colors.grey, fontSize: 10));
-                            }
-                            return const SizedBox();
-                          },
-                        ),
-                      ),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      getDrawingHorizontalLine: (value) => FlLine(
-                        color: Colors.grey.withOpacity(0.1),
-                        strokeWidth: 1,
-                        dashArray: [5, 5],
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: [
-                      _makeGroupData(0, 85, Colors.black),
-                      _makeGroupData(1, 62, Colors.black),
-                      _makeGroupData(2, 78, Colors.black),
-                      _makeGroupData(3, 92, Colors.black, isSelected: true),
-                      _makeGroupData(4, 58, Colors.black),
-                    ],
+                        children: [
+                          TextSpan(
+                            text: 'rating : ${rod.toY.toInt()}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
+                  touchCallback: (FlTouchEvent event, barTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          barTouchResponse == null ||
+                          barTouchResponse.spot == null) {
+                        // Keep the last touched index visible
+                        return;
+                      }
+                      touchedIndex = barTouchResponse.spot!.touchedBarGroupIndex;
+                    });
+                  },
                 ),
-                Positioned(
-                  top: 40,
-                  left: 150,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
-                    ),
-                    child: const Column(
-                      children: [
-                        Text("Emma W.", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        Text("rating : 92", style: TextStyle(fontSize: 12)),
-                      ],
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value < 0 || value >= names.length) return const SizedBox();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            names[value.toInt()],
+                            style: const TextStyle(color: Colors.grey, fontSize: 10),
+                          ),
+                        );
+                      },
                     ),
                   ),
+                  leftTitles: AxisTitles(
+                    axisNameWidget: const Text("Health Rating", style: TextStyle(fontSize: 10)),
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        if (value % 25 == 0) {
+                          return Text(value.toInt().toString(), style: const TextStyle(color: Colors.grey, fontSize: 10));
+                        }
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
-              ],
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Colors.grey.withOpacity(0.1),
+                    strokeWidth: 1,
+                    dashArray: [5, 5],
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(names.length, (i) {
+                  return _makeGroupData(i, ratings[i], Colors.black, isSelected: touchedIndex == i);
+                }),
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -122,6 +142,7 @@ class PatientOverviewChart extends StatelessWidget {
   BarChartGroupData _makeGroupData(int x, double y, Color color, {bool isSelected = false}) {
     return BarChartGroupData(
       x: x,
+      showingTooltipIndicators: isSelected ? [0] : [],
       barRods: [
         BarChartRodData(
           toY: y,
