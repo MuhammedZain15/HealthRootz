@@ -3,7 +3,6 @@ import 'package:grad_project/patient/patient_layout.dart';
 
 import 'doctor/doctor_layout.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
