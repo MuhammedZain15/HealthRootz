@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/patient_layout.dart';
 
 import 'doctor/doctor_layout.dart';
 
