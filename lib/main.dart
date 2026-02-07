@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grad_project/patient/patient_layout.dart';
 
 import 'doctor/doctor_layout.dart';
 
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(scaffoldBackgroundColor: Colors.white),
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: const DoctorAppLayout(),
+      home: const AppLayout(),
     );
   }
 }
