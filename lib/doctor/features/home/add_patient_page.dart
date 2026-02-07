@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
 import 'package:grad_project/doctor/features/home/widgets/patient_page_widgets/custom_labeled_input.dart';
+import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
 class AddPatientPage extends StatefulWidget {
   const AddPatientPage({super.key});
@@ -11,8 +12,6 @@ class AddPatientPage extends StatefulWidget {
 }
 
 class _AddPatientPageState extends State<AddPatientPage> {
-  String? _selectedGender;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,99 +32,117 @@ class _AddPatientPageState extends State<AddPatientPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderCard(),
-              const SizedBox(height: 20),
-              const CustomLabeledInput(
-                label: "Full Name",
-                hint: "Enter patient's full name",
-                prefixIcon: Icons.person_outline,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Expanded(
-                    child: CustomLabeledInput(
-                      label: "Age",
-                      hint: "Enter age",
-                      prefixIcon: Icons.calendar_today_outlined,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: const CustomLabeledInput(
-                      label: "Gender",
-                      hint: "Male",
-                      prefixIcon: Icons.person_outline,
-                      keyboardType: TextInputType.name,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const CustomLabeledInput(
-                label: "Email Address",
-                hint: "patient@email.com",
-                prefixIcon: Icons.mail_outline,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 20),
-              const CustomLabeledInput(
-                label: "Phone Number",
-                hint: "+1 (555) 123-4567",
-                prefixIcon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 20),
-              const CustomLabeledInput(
-                label: "Medical Notes",
-                hint: "Enter any relevant medical history or notes...",
-                prefixIcon: Icons.description_outlined,
-                maxLines: 4,
-                isRequired: false,
-              ),
-              const SizedBox(height: 40),
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomButton(
-                      text: "Add Patient",
-                      onPressed: () {},
-                      color: AppColors.skyBlue,
-                      height: 50,
-                      textStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomButton(
-                      text: "Cancel",
-                      onPressed: () => Navigator.pop(context),
-                      filled: false,
-                      borderColor: Colors.grey[300],
-                      height: 50,
-                      textStyle: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
+        child: ResponsiveLayout(
+          mobile: _buildForm(context),
+          tablet: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: _buildForm(context),
+            ),
+          ),
+          desktop: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: _buildForm(context),
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeaderCard(),
+          const SizedBox(height: 20),
+          const CustomLabeledInput(
+            label: "Full Name",
+            hint: "Enter patient's full name",
+            prefixIcon: Icons.person_outline,
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Expanded(
+                child: CustomLabeledInput(
+                  label: "Age",
+                  hint: "Enter age",
+                  prefixIcon: Icons.calendar_today_outlined,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: const CustomLabeledInput(
+                  label: "Gender",
+                  hint: "Male",
+                  prefixIcon: Icons.person_outline,
+                  keyboardType: TextInputType.name,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const CustomLabeledInput(
+            label: "Email Address",
+            hint: "patient@email.com",
+            prefixIcon: Icons.mail_outline,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 20),
+          const CustomLabeledInput(
+            label: "Phone Number",
+            hint: "+1 (555) 123-4567",
+            prefixIcon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 20),
+          const CustomLabeledInput(
+            label: "Medical Notes",
+            hint: "Enter any relevant medical history or notes...",
+            prefixIcon: Icons.description_outlined,
+            maxLines: 4,
+            isRequired: false,
+          ),
+          const SizedBox(height: 40),
+          Row(
+            children: [
+              Expanded(
+                child: CustomButton(
+                  text: "Add Patient",
+                  onPressed: () {},
+                  color: AppColors.skyBlue,
+                  height: 50,
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: CustomButton(
+                  text: "Cancel",
+                  onPressed: () => Navigator.pop(context),
+                  filled: false,
+                  borderColor: Colors.grey[300],
+                  height: 50,
+                  textStyle: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
