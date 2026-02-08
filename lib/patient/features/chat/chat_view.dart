@@ -5,6 +5,7 @@ import 'chat_widgets.dart';
 
 class ChatView extends StatefulWidget {
   final bool isDoctorChat;
+
   const ChatView({super.key, this.isDoctorChat = true});
 
   @override
@@ -39,6 +40,10 @@ class _ChatViewState extends State<ChatView> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: InkWell(
+          onTap: () => Navigator.pop(context),
+          child: Icon(Icons.arrow_back_ios, color: const Color(0xFF0F172A)),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -80,7 +85,7 @@ class _ChatViewState extends State<ChatView> {
                     selectedColor: AppColors.skyBlue,
                     onTap: () => _viewModel.toggleChatMode(true),
                   ),
-                  // aiالفرق بين الدكتور وال 
+                  // aiالفرق بين الدكتور وال
                   // هو ان الدكتور بيكون لونه سماوي ولما يضغط عليه يفتح شات الدكاترة
                   //ai بيكون لونه بنفسجي ولما يضغط عليه يفتح شات ال ai
                   ChatTabButton(
