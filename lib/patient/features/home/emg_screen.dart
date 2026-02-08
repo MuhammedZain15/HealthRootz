@@ -1,43 +1,43 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/features/home/oxygen_widgets.dart';
+import 'package:grad_project/patient/features/home/emg_widgets.dart';
 
-class BloodOxygenScreen extends StatefulWidget {
-  const BloodOxygenScreen({super.key});
+class EmgScreen extends StatefulWidget {
+  const EmgScreen({super.key});
 
   @override
-  State<BloodOxygenScreen> createState() => _BloodOxygenScreenState();
+  State<EmgScreen> createState() => _EmgScreenState();
 }
 
-class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
+class _EmgScreenState extends State<EmgScreen> {
   bool is24HoursSelected = true;
 
-  // Mock data for 24 Hours
+  // Mock data for 24 Hours - matching the curve in screenshot
   final List<FlSpot> spots24h = [
-    const FlSpot(0, 97),
-    const FlSpot(2, 96),
-    const FlSpot(4, 96),
-    const FlSpot(6, 96.5),
-    const FlSpot(8, 97.5),
-    const FlSpot(10, 98.2),
-    const FlSpot(12, 99),
-    const FlSpot(14, 98.5),
-    const FlSpot(16, 98),
-    const FlSpot(18, 97.8),
-    const FlSpot(20, 97.5),
-    const FlSpot(22, 97.2),
-    const FlSpot(24, 97),
+    const FlSpot(0, 45),
+    const FlSpot(2, 43),
+    const FlSpot(4, 42), // dip
+    const FlSpot(6, 50),
+    const FlSpot(8, 75), // sharp rise
+    const FlSpot(10, 82),
+    const FlSpot(12, 85), // peak
+    const FlSpot(14, 80),
+    const FlSpot(16, 73),
+    const FlSpot(18, 69),
+    const FlSpot(20, 66),
+    const FlSpot(22, 65),
+    const FlSpot(24, 63),
   ];
 
   // Mock data for Last Week
   final List<FlSpot> spotsWeek = [
-    const FlSpot(0, 96), // Mon
-    const FlSpot(1, 97), // Tue
-    const FlSpot(2, 98), // Wed
-    const FlSpot(3, 97.5), // Thu
-    const FlSpot(4, 98.5), // Fri
-    const FlSpot(5, 99), // Sat
-    const FlSpot(6, 98), // Sun
+    const FlSpot(0, 60), // Mon
+    const FlSpot(1, 70), // Tue
+    const FlSpot(2, 85), // Wed
+    const FlSpot(3, 65), // Thu
+    const FlSpot(4, 55), // Fri
+    const FlSpot(5, 45), // Sat
+    const FlSpot(6, 50), // Sun
   ];
 
   List<FlSpot> get currentSpots => is24HoursSelected ? spots24h : spotsWeek;
@@ -70,7 +70,7 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
             children: [
               // Header Title
               const Text(
-                "Blood Oxygen Level",
+                "EMG Activity",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -84,7 +84,7 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
               const SizedBox(height: 20),
 
               // Main Reading Card
-              const OxygenReadingCard(time: "7:23 PM", date: "Feb 6, 2026"),
+              const EmgReadingCard(time: "7:23 PM", date: "Feb 6, 2026"),
               const SizedBox(height: 24),
 
               // Time Range Toggle
@@ -97,7 +97,7 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
                 ),
                 child: Row(
                   children: [
-                    OxygenToggleOption(
+                    EmgToggleOption(
                       text: "Last 24 Hours",
                       isSelected: is24HoursSelected,
                       onTap: () {
@@ -106,7 +106,7 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
                         });
                       },
                     ),
-                    OxygenToggleOption(
+                    EmgToggleOption(
                       text: "Last Week",
                       isSelected: !is24HoursSelected,
                       onTap: () {
@@ -121,7 +121,7 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
               const SizedBox(height: 24),
 
               // Chart Card
-              OxygenChart(
+              EmgChart(
                 is24HoursSelected: is24HoursSelected,
                 spots: currentSpots,
               ),
@@ -130,11 +130,11 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
               // Stats Row
               Row(
                 children: const [
-                  OxygenStatCard(title: "Minimum", value: "96%"),
+                  EmgStatCard(title: "Minimum", value: "42", unit: "µV"),
                   SizedBox(width: 12),
-                  OxygenStatCard(title: "Average", value: "98%"),
+                  EmgStatCard(title: "Average", value: "68", unit: "µV"),
                   SizedBox(width: 12),
-                  OxygenStatCard(title: "Maximum", value: "99%"),
+                  EmgStatCard(title: "Maximum", value: "85", unit: "µV"),
                 ],
               ),
               const SizedBox(height: 40),

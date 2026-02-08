@@ -5,4 +5,5 @@ class AppColors {
   static const skyBlue = Color(0xff38B6FF);
   static const red = Color(0xffBF092F);
   static const purple = Color(0xff9C27B0); // Added Purple
+
 }
