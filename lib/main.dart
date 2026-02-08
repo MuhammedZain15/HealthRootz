@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/patient_layout.dart';
-
-import 'doctor/doctor_layout.dart';
+import 'package:grad_project/patient/layout/patient_layout.dart';
 
 void main() {
   runApp(const MyApp());
