@@ -69,6 +69,8 @@ class _AppLayoutState extends State<DoctorAppLayout> {
       bottomNavigationBar: BottomNavigationBar(
 
         currentIndex: _selectedIndex,
+
+
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
