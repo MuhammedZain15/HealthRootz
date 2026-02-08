@@ -32,11 +32,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProfileHeaderCard(
-                name: name,
-                email: email,
-                onEdit: () {},
-              ),
+              ProfileHeaderCard(name: name, email: email, onEdit: () {}),
               const SizedBox(height: 18),
               const ProfileSectionTitle(title: 'Personal Information'),
               const SizedBox(height: 12),

@@ -2,6 +2,7 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/alerts/alert_page.dart';
+
 import 'package:grad_project/patient/features/history/history_page.dart';
 import 'package:grad_project/patient/features/home/home_page.dart';
 import 'package:grad_project/patient/features/profile/profile_page.dart';
