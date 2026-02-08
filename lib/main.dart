@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/layout/patient_layout.dart';
+import 'package:grad_project/switch_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(scaffoldBackgroundColor: Colors.white),
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: const AppLayout(),
+      home: const SwitchPage(),
     );
   }
 }

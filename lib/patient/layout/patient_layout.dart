@@ -1,3 +1,4 @@
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/alerts/alert_page.dart';
@@ -5,7 +6,6 @@ import 'package:grad_project/patient/features/history/history_page.dart';
 import 'package:grad_project/patient/features/home/home_page.dart';
 import 'package:grad_project/patient/features/profile/profile_page.dart';
 import 'package:grad_project/patient/layout/buttom_sheet.dart';
-import 'package:grad_project/patient/layout/patient_widgets.dart';
 
 class AppLayout extends StatefulWidget {
   const AppLayout({super.key});
@@ -24,11 +24,6 @@ class _AppLayoutState extends State<AppLayout> {
     ProfilePage(),
   ];
 
-  void _onItemTapped(int index) {
-    if (_selectedIndex == index) return;
-    setState(() => _selectedIndex = index);
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -40,58 +35,69 @@ class _AppLayoutState extends State<AppLayout> {
         onPressed: () => showActionBottomSheet(context),
         shape: const CircleBorder(),
         backgroundColor: AppColors.skyBlue,
-        elevation: 0, // عشان ما يطلعش ظل تحت الفلوتينج يبقا مسطح كدا
-        child: Icon(Icons.add, color: Colors.white, size: size.width * 0.08),
+        elevation: 0,
+        child: Icon(
+          Icons.chat_bubble,
+          color: Colors.white,
+          size: size.width * 0.08,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        color: Colors.white,
-        padding: EdgeInsets.zero,
+      bottomNavigationBar: AnimatedBottomNavigationBar.builder(
+        itemCount: 4,
+        tabBuilder: (int index, bool isActive) {
+          final color = isActive ? AppColors.skyBlue : const Color(0xff6B7280);
+          final double iconSize = size.width * 0.07;
+          IconData icon;
+          String label;
+
+          switch (index) {
+            case 0:
+              icon = isActive ? Icons.home : Icons.home_outlined;
+              label = 'Home';
+              break;
+            case 1:
+              icon = isActive ? Icons.history : Icons.history_outlined;
+              label = 'History';
+              break;
+            case 2:
+              icon = isActive ? Icons.notifications : Icons.notifications_none;
+              label = 'Alerts';
+              break;
+            case 3:
+              icon = isActive ? Icons.person : Icons.person_outline;
+              label = 'Profile';
+              break;
+            default:
+              icon = Icons.error;
+              label = '';
+          }
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: iconSize, color: color),
+              const SizedBox(height: 2), // Reduced spacing
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: size.width * 0.03, // Consistent with previous
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          );
+        },
+        activeIndex: _selectedIndex,
+        gapLocation: GapLocation.center,
+
+        notchSmoothness: NotchSmoothness.sharpEdge,
+        onTap: (index) => setState(() => _selectedIndex = index),
         height: bottomBarHeight > 60 ? bottomBarHeight : 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            PatientNavItem(
-              index: 0,
-              selectedIndex: _selectedIndex,
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home,
-              label: 'Home',
-              width: size.width,
-              onItemTapped: _onItemTapped,
-            ),
-            PatientNavItem(
-              index: 1,
-              selectedIndex: _selectedIndex,
-              icon: Icons.history_outlined,
-              activeIcon: Icons.history,
-              label: 'History',
-              width: size.width,
-              onItemTapped: _onItemTapped,
-            ),
-            SizedBox(width: size.width * 0.1),
-            PatientNavItem(
-              index: 2,
-              selectedIndex: _selectedIndex,
-              icon: Icons.notifications_none,
-              activeIcon: Icons.notifications,
-              label: 'Alerts',
-              width: size.width,
-              onItemTapped: _onItemTapped,
-            ),
-            PatientNavItem(
-              index: 3,
-              selectedIndex: _selectedIndex,
-              icon: Icons.person_outline,
-              activeIcon: Icons.person,
-              label: 'Profile',
-              width: size.width,
-              onItemTapped: _onItemTapped,
-            ),
-          ],
-        ),
+        backgroundColor: Colors.white,
+        elevation: 8, // Added some elevation for better visibility
       ),
     );
   }

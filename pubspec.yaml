@@ -41,6 +41,7 @@ dependencies:
   gif_view: ^1.0.3
   fl_chart: ^1.1.1
   flutter_bloc: ^9.1.1
+  animated_bottom_navigation_bar: ^1.4.0
 
 dev_dependencies:
   flutter_test:

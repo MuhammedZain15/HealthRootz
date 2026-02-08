@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/patient/features/home/blood_oxygen_screen.dart';
+import 'package:grad_project/patient/features/home/doctor_notes/doctor_notes_screen.dart';
 import 'package:grad_project/patient/features/home/emg_screen.dart';
 import 'package:grad_project/app_colors.dart';
 
 import 'package:grad_project/patient/features/home/widgets.dart';
-
-import 'package:grad_project/patient/features/appointment/choose_doctor_screen.dart';
-import 'package:grad_project/patient/features/doctor_notes/doctor_notes_screen.dart';
+import 'appointment/choose_doctor_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
