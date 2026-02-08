@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/doctor/doctor_layout.dart';
 import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
-import 'package:grad_project/patient/patient_layout.dart';
+import 'package:grad_project/patient/layout/patient_layout.dart';
 
 class SwitchPage extends StatelessWidget {
   const SwitchPage({super.key});

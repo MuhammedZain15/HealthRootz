@@ -1,9 +1,7 @@
 // dart
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-
-
-import '../../../patient_layout.dart';
+import 'package:grad_project/patient/layout/patient_layout.dart';
 import '../sign_in/sign_in_page.dart';
 import '../widgets/custom_button.dart';
 
