@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grad_project/shared/widgets/responsive_layout.dart';
 import './data/measurement_model.dart';
 import './presentation/widgets/history_summary_cards.dart';
 import './presentation/widgets/history_filter_tabs.dart';
@@ -48,10 +49,23 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  HistorySummaryCards(
-                    readingsCount: records.length,
-                    visitsCount: 3, // Mock value
-                    thisWeekCount: 7, // Mock value
+                  ResponsiveLayout(
+                    mobile: HistorySummaryCards(
+                      readingsCount: records.length,
+                      visitsCount: 3,
+                      thisWeekCount: 7,
+                    ),
+                    tablet: Row(
+                      children: [
+                        Expanded(
+                          child: HistorySummaryCards(
+                            readingsCount: records.length,
+                            visitsCount: 3,
+                            thisWeekCount: 7,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
                   HistoryFilterTabs(
@@ -66,28 +80,10 @@ class _HistoryPageState extends State<HistoryPage> {
                   Expanded(
                     child: filteredRecords.isEmpty
                         ? _buildEmptyState()
-                        : ListView.separated(
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: filteredRecords.length,
-                            padding: const EdgeInsets.only(bottom: 20),
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (context, index) {
-                              final record = filteredRecords[index];
-                              return HistoryListItem(
-                                record: record,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MeasurementDetailsPage(
-                                        record: record,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                        : ResponsiveLayout(
+                            mobile: _buildListView(filteredRecords),
+                            tablet: _buildGridView(filteredRecords, 2),
+                            desktop: _buildGridView(filteredRecords, 3),
                           ),
                   ),
                 ],
@@ -99,11 +95,57 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  Widget _buildListView(List<MeasurementRecord> filteredRecords) {
+    return ListView.separated(
+      physics: const BouncingScrollPhysics(),
+      itemCount: filteredRecords.length,
+      padding: const EdgeInsets.only(bottom: 20),
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final record = filteredRecords[index];
+        return HistoryListItem(
+          record: record,
+          onTap: () => _navigateToDetails(context, record),
+        );
+      },
+    );
+  }
+
+  Widget _buildGridView(
+    List<MeasurementRecord> filteredRecords,
+    int crossAxisCount,
+  ) {
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 20),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 3.5,
+      ),
+      itemCount: filteredRecords.length,
+      itemBuilder: (context, index) {
+        final record = filteredRecords[index];
+        return HistoryListItem(
+          record: record,
+          onTap: () => _navigateToDetails(context, record),
+        );
+      },
+    );
+  }
+
+  void _navigateToDetails(BuildContext context, MeasurementRecord record) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => MeasurementDetailsPage(record: record)),
+    );
+  }
+
   List<MeasurementRecord> _getFilteredRecords(List<MeasurementRecord> records) {
-    if (_selectedFilterIndex == 0) return records; // All
-    if (_selectedFilterIndex == 1)
-      return records; // Sensors (All mocked as sensors currently)
-    if (_selectedFilterIndex == 2) return []; // Visits (Empty mock)
+    if (_selectedFilterIndex == 0) return records;
+    if (_selectedFilterIndex == 1) return records;
+    if (_selectedFilterIndex == 2) return [];
     return records;
   }
 

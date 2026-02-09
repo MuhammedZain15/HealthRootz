@@ -2,11 +2,11 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/alerts/alert_page.dart';
-
 import 'package:grad_project/patient/features/history/history_page.dart';
 import 'package:grad_project/patient/features/home/home_page.dart';
 import 'package:grad_project/patient/features/profile/profile_page.dart';
 import 'package:grad_project/patient/layout/buttom_sheet.dart';
+import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
 class AppLayout extends StatefulWidget {
   const AppLayout({super.key});
@@ -27,6 +27,14 @@ class _AppLayoutState extends State<AppLayout> {
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobile: _buildMobileLayout(context),
+      tablet: _buildTabletDesktopLayout(context),
+      desktop: _buildTabletDesktopLayout(context),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final double bottomBarHeight = size.height * 0.08;
 
@@ -79,12 +87,12 @@ class _AppLayoutState extends State<AppLayout> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: iconSize, color: color),
-              const SizedBox(height: 2), // Reduced spacing
+              const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
                   color: color,
-                  fontSize: size.width * 0.03, // Consistent with previous
+                  fontSize: size.width * 0.03,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -93,13 +101,76 @@ class _AppLayoutState extends State<AppLayout> {
         },
         activeIndex: _selectedIndex,
         gapLocation: GapLocation.center,
-
         notchSmoothness: NotchSmoothness.sharpEdge,
         onTap: (index) => setState(() => _selectedIndex = index),
         height: bottomBarHeight > 60 ? bottomBarHeight : 60,
         backgroundColor: Colors.white,
-        elevation: 8, // Added some elevation for better visibility
+        elevation: 8,
       ),
+    );
+  }
+
+  Widget _buildTabletDesktopLayout(BuildContext context) {
+    return Scaffold(
+      body: Row(
+        children: [
+          _buildNavigationRail(),
+          const VerticalDivider(thickness: 1, width: 1),
+          Expanded(
+            child: IndexedStack(index: _selectedIndex, children: _pages),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationRail() {
+    return NavigationRail(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+      labelType: NavigationRailLabelType.all,
+      backgroundColor: Colors.white,
+      selectedIconTheme: const IconThemeData(color: AppColors.skyBlue),
+      unselectedIconTheme: const IconThemeData(color: Color(0xff6B7280)),
+      selectedLabelTextStyle: const TextStyle(
+        color: AppColors.skyBlue,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelTextStyle: const TextStyle(color: Color(0xff6B7280)),
+      leading: Column(
+        children: [
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () => showActionBottomSheet(context),
+            backgroundColor: AppColors.skyBlue,
+            elevation: 0,
+            child: const Icon(Icons.chat_bubble, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+      destinations: const [
+        NavigationRailDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: Text('Home'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.history_outlined),
+          selectedIcon: Icon(Icons.history),
+          label: Text('History'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.notifications_none),
+          selectedIcon: Icon(Icons.notifications),
+          label: Text('Alerts'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: Text('Profile'),
+        ),
+      ],
     );
   }
 }
