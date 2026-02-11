@@ -21,7 +21,6 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _medicalCtrl = TextEditingController();
 
   String? _role;
-  bool _loading = false;
   bool _obscure = true;
 
   @override
@@ -36,10 +35,8 @@ class _SignUpPageState extends State<SignUpPage> {
 
   void _createAccount() {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
 
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() => _loading = false);
       // On success navigate to sign in (adjust route as needed)
       Navigator.pushReplacement(
         context,
@@ -51,7 +48,6 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       backgroundColor: Color(0xffF1F7FF),
       body: SafeArea(
         child: Center(
@@ -94,10 +90,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction:  TextInputAction.next,
+                          textInputAction: TextInputAction.next,
                           controller: _nameCtrl,
                           decoration: InputDecoration(
-
                             hintText: 'John Doe',
                             filled: true,
                             fillColor: Colors.white,
@@ -119,7 +114,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         const Text('Email *', style: TextStyle(fontSize: 13)),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction:  TextInputAction.next,
+                          textInputAction: TextInputAction.next,
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
@@ -153,7 +148,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         const Text('Age *', style: TextStyle(fontSize: 13)),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction:  TextInputAction.next,
+                          textInputAction: TextInputAction.next,
                           controller: _ageCtrl,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
@@ -186,7 +181,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction:  TextInputAction.next,
+                          textInputAction: TextInputAction.next,
                           controller: _passwordCtrl,
                           obscureText: _obscure,
                           decoration: InputDecoration(
@@ -222,7 +217,6 @@ class _SignUpPageState extends State<SignUpPage> {
                         const Text('Role *', style: TextStyle(fontSize: 13)),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<String>(
-
                           initialValue: _role,
                           items: const [
                             DropdownMenuItem(
@@ -235,7 +229,6 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ],
                           decoration: InputDecoration(
-
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
@@ -259,7 +252,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction:  TextInputAction.done,
+                          textInputAction: TextInputAction.done,
                           controller: _medicalCtrl,
                           maxLines: 4,
                           decoration: InputDecoration(

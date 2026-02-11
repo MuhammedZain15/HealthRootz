@@ -17,7 +17,6 @@ class _SignInPageState extends State<SignInPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
 
   @override
   void dispose() {
@@ -28,10 +27,8 @@ class _SignInPageState extends State<SignInPage> {
 
   void _onSignIn() {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
     // perform sign-in logic here
     Future.delayed(const Duration(seconds: 1), () {
-      setState(() => _loading = false);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => AppLayout()),

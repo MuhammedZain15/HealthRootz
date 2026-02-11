@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/patient/features/appointment/appointment_widgets.dart';
-import 'package:grad_project/patient/features/appointment/confirm_booking_screen.dart';
+
+import 'appointment_widgets.dart';
+import 'confirm_booking_screen.dart';
 
 class SelectDateTimeScreen extends StatefulWidget {
   final String doctorName;

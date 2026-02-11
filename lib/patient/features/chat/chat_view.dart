@@ -101,24 +101,37 @@ class _ChatViewState extends State<ChatView> {
           ),
           // ليست المسدجات
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              itemCount: _viewModel.messages.length,
-              itemBuilder: (context, index) => ChatMessageBubble(
-                message: _viewModel.messages[index],
-                maxWidth: size.width * 0.7,
-                accentColor: _accentColor,
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  itemCount: _viewModel.messages.length,
+                  itemBuilder: (context, index) => ChatMessageBubble(
+                    message: _viewModel.messages[index],
+                    maxWidth: size.width > 900 ? 600 : size.width * 0.75,
+                    accentColor: _accentColor,
+                  ),
+                ),
               ),
             ),
           ),
           // الكيبورد
-          ChatInputArea(
-            controller: _viewModel.textController,
-            hintText: _viewModel.isDoctorChat
-                ? 'Message Dr. Johnson...'
-                : 'Message AI Assistant...',
-            accentColor: _accentColor,
-            onSend: _viewModel.sendMessage,
+          Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: ChatInputArea(
+                controller: _viewModel.textController,
+                hintText: _viewModel.isDoctorChat
+                    ? 'Message Dr. Johnson...'
+                    : 'Message AI Assistant...',
+                accentColor: _accentColor,
+                onSend: _viewModel.sendMessage,
+              ),
+            ),
           ),
         ],
       ),

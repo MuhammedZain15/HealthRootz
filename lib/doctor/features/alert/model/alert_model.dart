@@ -1,5 +1,3 @@
-
-import 'package:flutter/material.dart';
 import 'package:grad_project/doctor/features/patients/model/patient_model.dart';
 
 enum AlertSeverity { critical, warning, resolved }

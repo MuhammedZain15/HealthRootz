@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/patient/features/appointment/appointment_widgets.dart';
+
+import 'appointment_widgets.dart';
 
 class ConfirmBookingScreen extends StatelessWidget {
   final String doctorName;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/features/appointment/appointment_widgets.dart';
-import 'package:grad_project/patient/features/appointment/select_date_time_screen.dart';
+import 'package:grad_project/patient/features/home/appointment/select_date_time_screen.dart';
+
+import 'appointment_widgets.dart';
 
 class ChooseDoctorScreen extends StatelessWidget {
   const ChooseDoctorScreen({super.key});
