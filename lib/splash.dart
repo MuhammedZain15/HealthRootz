@@ -1,6 +1,10 @@
 // dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/doctor/doctor_layout.dart';
 import 'package:grad_project/patient/features/auth/register_page.dart';
+import 'package:grad_project/patient/layout/patient_layout.dart';
 
 import 'app_colors.dart';
 
@@ -17,12 +21,36 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Show splash for at least 2 seconds
+    final minDelay = Future.delayed(const Duration(seconds: 2));
+
+    // Try auto-login with stored token
+    final authCubit = context.read<AuthCubit>();
+    await authCubit.tryAutoLogin();
+
+    // Wait for the minimum splash duration
+    await minDelay;
+
+    if (!mounted) return;
+
+    if (authCubit.isAuthenticated) {
+      // Navigate based on role
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => authCubit.isDoctor
+              ? const DoctorAppLayout()
+              : const AppLayout(),
+        ),
+      );
+    } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const RegisterPage()),
       );
-    });
+    }
   }
 
   @override
@@ -62,3 +90,4 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+

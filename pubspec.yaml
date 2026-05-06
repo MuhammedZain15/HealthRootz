@@ -42,6 +42,8 @@ dependencies:
   fl_chart: ^1.1.1
   flutter_bloc: ^9.1.1
   animated_bottom_navigation_bar: ^1.4.0
+  dio: ^5.9.2
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

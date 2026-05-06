@@ -3,6 +3,9 @@ import 'package:grad_project/shared/widgets/responsive_layout.dart';
 import 'widgets/profile_header_card.dart';
 import 'widgets/profile_info_card.dart';
 import 'widgets/profile_logout_button.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
 import 'widgets/profile_medication_card.dart';
 import 'widgets/profile_section_title.dart';
 
@@ -14,14 +17,32 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final String name = 'Mohamed Zaini';
-  final String email = 'mohamed.zaini@email.com';
+  String name = 'Loading...';
+  String email = 'Loading...';
   final String phone = '+1 (555) 789-1234';
   final String dateOfBirth = 'March 15, 1992';
   final String address = 'Cairo, Egypt';
   final String bloodType = 'A+';
   final String height = '178 cm';
   final String weight = '75 kg';
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<AuthCubit>().user;
+    if (user != null) {
+      name = user.name ?? "";
+      email = user.email ?? "";
+    }
+  }
+
+  void _logout() async {
+    await context.read<AuthCubit>().logout();
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pushReplacement(
+      MaterialPageRoute(builder: (_) => const SignInPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 18),
           _buildSettingsSection(),
           const SizedBox(height: 16),
-          ProfileLogoutButton(onPressed: () {}),
+          ProfileLogoutButton(onPressed: _logout),
         ],
       ),
     );
@@ -92,7 +113,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 24),
                     _buildEmergencySection(),
                     const SizedBox(height: 32),
-                    ProfileLogoutButton(onPressed: () {}),
+                    ProfileLogoutButton(onPressed: _logout),
                   ],
                 ),
               ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/doctor/doctor_layout.dart';
 import 'package:grad_project/patient/layout/patient_layout.dart';
 
 import '../sign_up/sign_up_page.dart';
@@ -16,7 +19,9 @@ class _SignInPageState extends State<SignInPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   bool _obscure = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -25,15 +30,41 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
-  void _onSignIn() {
+  Future<void> _onSignIn() async {
     if (!_formKey.currentState!.validate()) return;
-    // perform sign-in logic here
-    Future.delayed(const Duration(seconds: 1), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AppLayout()),
+
+    setState(() => _isLoading = true);
+
+    final authCubit = context.read<AuthCubit>();
+    final resultState = await authCubit.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (resultState.status == AuthStatus.authenticated) {
+      if (authCubit.isDoctor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DoctorAppLayout()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AppLayout()),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(resultState.errorMessage ?? 'Login failed'),
+          backgroundColor: Colors.red,
+        ),
       );
-    });
+    }
   }
 
   @override
@@ -157,7 +188,10 @@ class _SignInPageState extends State<SignInPage> {
                             // Sign in button
                             SizedBox(
                               height: 44,
-                              child: CustomButton(
+                              child: _isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator())
+                                  : CustomButton(
                                 color: AppColors.skyBlue,
                                 text: "Sign In",
                                 onPressed: () {

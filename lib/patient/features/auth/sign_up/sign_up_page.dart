@@ -1,6 +1,9 @@
 // dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/doctor/doctor_layout.dart';
 import 'package:grad_project/patient/layout/patient_layout.dart';
 import '../sign_in/sign_in_page.dart';
 import '../widgets/custom_button.dart';
@@ -22,6 +25,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   String? _role;
   bool _obscure = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,16 +37,43 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _createAccount() {
+  Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
-    Future.delayed(const Duration(seconds: 2), () {
-      // On success navigate to sign in (adjust route as needed)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AppLayout()),
+    setState(() => _isLoading = true);
+
+    final authCubit = context.read<AuthCubit>();
+    final resultState = await authCubit.register(
+      name: _nameCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      password: _passwordCtrl.text,
+      role: _role!,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (resultState.status == AuthStatus.authenticated) {
+      if (authCubit.isDoctor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DoctorAppLayout()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AppLayout()),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(resultState.errorMessage ?? 'Registration failed'),
+          backgroundColor: Colors.red,
+        ),
       );
-    });
+    }
   }
 
   @override
@@ -273,11 +304,13 @@ class _SignUpPageState extends State<SignUpPage> {
 
                         SizedBox(
                           height: 44,
-                          child: CustomButton(
-                            color: AppColors.skyBlue,
-                            text: "Create Account",
-                            onPressed: _createAccount,
-                          ),
+                          child: _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : CustomButton(
+                                  color: AppColors.skyBlue,
+                                  text: "Create Account",
+                                  onPressed: _createAccount,
+                                ),
                         ),
                         const SizedBox(height: 12),
                         Center(

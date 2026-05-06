@@ -6,6 +6,9 @@ import 'package:grad_project/doctor/features/reports/reports_page.dart';
 import 'features/alert/doctor_alert_page.dart';
 import 'features/chat/doctor_chat_page.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
 import 'features/home/doctor_home_page.dart';
 import 'features/profile/doctor_profile_page.dart';
 
@@ -20,12 +23,22 @@ class _AppLayoutState extends State<DoctorAppLayout> {
   int _selectedIndex = 0;
 
   // Profile State
-  String name = "Dr. Anderson";
-  String email = "anderson@healthrootz.com";
+  String name = "";
+  String email = "";
   String phone = "+1 (555) 123-4567";
   String specialty = "Cardiology";
   String licenseNumber = "MD-123456";
   String address = "123 Medical Center, New York, NY 10001";
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<AuthCubit>().user;
+    if (user != null) {
+      name = user.name ?? "";
+      email = user.email ?? "";
+    }
+  }
 
   void _updateProfile(Map<String, String> newData) {
     setState(() {

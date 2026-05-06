@@ -3,6 +3,9 @@ import 'package:grad_project/doctor/features/profile/widgets/profile_header.dart
 import 'package:grad_project/doctor/features/profile/widgets/profile_info_card.dart';
 import 'package:grad_project/doctor/features/profile/widgets/change_password_card.dart';
 import 'package:grad_project/doctor/features/profile/widgets/notification_settings_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
 
 class DoctorProfilePage extends StatelessWidget {
   final Map<String, String> initialData;
@@ -72,7 +75,39 @@ class DoctorProfilePage extends StatelessWidget {
               const SizedBox(height: 24),
               const ChangePasswordCard(),
               const SizedBox(height: 24),
+              const SizedBox(height: 24),
               const NotificationSettingsCard(),
+              const SizedBox(height: 32),
+              
+              // Logout Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[50],
+                    foregroundColor: Colors.red[600],
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    await context.read<AuthCubit>().logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context, rootNavigator: true).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const SignInPage()),
+                    );
+                  },
+                  child: const Text(
+                    "Log Out",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
             ],
           ),
