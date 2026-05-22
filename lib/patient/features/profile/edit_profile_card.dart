@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 
-import '../auth/widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 
 
 class EditProfileCard extends StatefulWidget {

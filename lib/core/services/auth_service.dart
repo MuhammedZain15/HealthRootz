@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../models/forgot_password_result.dart';
 import '../models/user_model.dart';
 import '../network/api_client.dart';
 import '../network/api_constants.dart';
@@ -17,6 +18,13 @@ class AuthService {
     required String email,
     required String password,
     required String role, // "doctor" or "patient"
+    String? phone,
+    String? address,
+    String? specialty,
+    String? licenseNumber,
+    int? age,
+    String? gender,
+    String? medicalHistory,
   }) async {
     try {
       final response = await _dio.post(
@@ -26,6 +34,13 @@ class AuthService {
           'email': email,
           'password': password,
           'role': role,
+          if (phone != null) 'phone': phone,
+          if (address != null) 'address': address,
+          if (specialty != null) 'specialty': specialty,
+          if (licenseNumber != null) 'licenseNumber': licenseNumber,
+          if (age != null) 'age': age,
+          if (gender != null) 'gender': gender,
+          if (medicalHistory != null) 'medicalHistory': medicalHistory,
         },
       );
 
@@ -94,9 +109,30 @@ class AuthService {
     }
   }
 
+  // ─── Update Profile ────────────────────────────────────────────────
+  
+  Future<ApiResponse<UserModel>> updateProfile(Map<String, dynamic> updates) async {
+    try {
+      final response = await _dio.put(
+        ApiConstants.profile,
+        data: updates,
+      );
+      final user = UserModel.fromJson(response.data);
+      return ApiResponse(success: true, data: user);
+    } on DioException catch (e) {
+      return ApiResponse(
+        success: false,
+        message: _extractError(e),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
   // ─── Forgot Password ──────────────────────────────────────────────
 
-  Future<ApiResponse<String>> forgotPassword({required String email}) async {
+  Future<ApiResponse<ForgotPasswordResult>> forgotPassword({
+    required String email,
+  }) async {
     try {
       final response = await _dio.post(
         ApiConstants.forgotPassword,
@@ -104,7 +140,7 @@ class AuthService {
       );
       return ApiResponse(
         success: true,
-        data: response.data['message'] as String? ?? 'Email sent',
+        data: ForgotPasswordResult.fromResponse(response.data),
       );
     } on DioException catch (e) {
       return ApiResponse(
@@ -126,10 +162,16 @@ class AuthService {
         ApiConstants.resetPassword(resetToken),
         data: {'password': newPassword},
       );
-      return ApiResponse(
-        success: true,
-        data: response.data['message'] as String? ?? 'Password reset',
-      );
+      final body = response.data;
+      final message = body is Map
+          ? (body['message'] ??
+                  (body['data'] is Map
+                      ? (body['data'] as Map)['message']
+                      : null) ??
+                  'Password reset successfully')
+              .toString()
+          : 'Password reset successfully';
+      return ApiResponse(success: true, data: message);
     } on DioException catch (e) {
       return ApiResponse(
         success: false,

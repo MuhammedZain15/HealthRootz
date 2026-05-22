@@ -55,6 +55,18 @@ class PatientInformationSection extends StatelessWidget {
           Divider(color: Colors.grey.shade200, height: 1),
           PatientInfoRow(label: 'Phone', value: patient.phone ?? 'N/A'),
           Divider(color: Colors.grey.shade200, height: 1),
+          PatientInfoRow(label: 'Gender', value: patient.gender ?? 'N/A'),
+          Divider(color: Colors.grey.shade200, height: 1),
+          PatientInfoRow(
+            label: 'Condition',
+            value: patient.condition ?? 'N/A',
+          ),
+          Divider(color: Colors.grey.shade200, height: 1),
+          PatientInfoRow(
+            label: 'Medical History',
+            value: patient.medicalHistory ?? 'N/A',
+          ),
+          Divider(color: Colors.grey.shade200, height: 1),
           PatientInfoRow(label: 'Blood Type', value: patient.bloodType ?? 'N/A'),
           Divider(color: Colors.grey.shade200, height: 1),
           PatientInfoRow(label: 'Allergies', value: patient.allergies ?? 'N/A'),
@@ -65,8 +77,6 @@ class PatientInformationSection extends StatelessWidget {
                 ? DateFormat('yyyy-MM-dd').format(patient.lastVisit!)
                 : 'N/A',
           ),
-          Divider(color: Colors.grey.shade200, height: 1),
-          PatientInfoRow(label: 'Address', value: patient.address ?? 'N/A'),
         ],
       ),
     );

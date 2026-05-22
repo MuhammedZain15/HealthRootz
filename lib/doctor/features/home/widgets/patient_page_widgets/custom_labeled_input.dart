@@ -8,6 +8,8 @@ class CustomLabeledInput extends StatelessWidget {
   final int maxLines;
   final TextInputType keyboardType;
   final TextEditingController? controller;
+  final String? Function(String?)? validator;
+  final ValueChanged<String>? onChanged;
 
   const CustomLabeledInput({
     super.key,
@@ -18,6 +20,8 @@ class CustomLabeledInput extends StatelessWidget {
     this.maxLines = 1,
     this.keyboardType = TextInputType.text,
     this.controller,
+    this.validator,
+    this.onChanged,
   });
 
   @override
@@ -45,6 +49,16 @@ class CustomLabeledInput extends StatelessWidget {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          onChanged: onChanged,
+          validator: validator ??
+              (isRequired
+                  ? (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Required';
+                      }
+                      return null;
+                    }
+                  : null),
           maxLines: maxLines,
           keyboardType: keyboardType,
           decoration: InputDecoration(

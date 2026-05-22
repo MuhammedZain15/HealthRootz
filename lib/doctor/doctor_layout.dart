@@ -8,7 +8,6 @@ import 'features/chat/doctor_chat_page.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
-import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
 import 'features/home/doctor_home_page.dart';
 import 'features/profile/doctor_profile_page.dart';
 
@@ -22,35 +21,6 @@ class DoctorAppLayout extends StatefulWidget {
 class _AppLayoutState extends State<DoctorAppLayout> {
   int _selectedIndex = 0;
 
-  // Profile State
-  String name = "";
-  String email = "";
-  String phone = "+1 (555) 123-4567";
-  String specialty = "Cardiology";
-  String licenseNumber = "MD-123456";
-  String address = "123 Medical Center, New York, NY 10001";
-
-  @override
-  void initState() {
-    super.initState();
-    final user = context.read<AuthCubit>().user;
-    if (user != null) {
-      name = user.name ?? "";
-      email = user.email ?? "";
-    }
-  }
-
-  void _updateProfile(Map<String, String> newData) {
-    setState(() {
-      name = newData['name'] ?? name;
-      email = newData['email'] ?? email;
-      phone = newData['phone'] ?? phone;
-      specialty = newData['specialty'] ?? specialty;
-      licenseNumber = newData['licenseNumber'] ?? licenseNumber;
-      address = newData['address'] ?? address;
-    });
-  }
-
   void _onItemTapped(int index) {
     if (_selectedIndex == index) return;
     setState(() => _selectedIndex = index);
@@ -58,31 +28,23 @@ class _AppLayoutState extends State<DoctorAppLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+    final user = authState.user;
+    final doctorName = user?.name ?? 'Doctor';
+
     final List<Widget> pages = [
-      DoctorHomePage(doctorName: name),
+      DoctorHomePage(doctorName: doctorName),
       const PatientPage(),
       const DoctorAlertPage(),
       const ReportsPage(),
       const DoctorChatPage(),
-      DoctorProfilePage(
-        initialData: {
-          'name': name,
-          'email': email,
-          'phone': phone,
-          'specialty': specialty,
-          'licenseNumber': licenseNumber,
-          'address': address,
-        },
-        onProfileUpdate: _updateProfile,
-      ),
+      const DoctorProfilePage(),
     ];
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
-
         currentIndex: _selectedIndex,
-
 
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,

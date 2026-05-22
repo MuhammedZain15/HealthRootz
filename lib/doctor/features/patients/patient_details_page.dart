@@ -1,81 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/doctor/features/patients/cubit/doctor_patient_detail_cubit.dart';
+import 'package:grad_project/doctor/features/patients/models/doctor_patient_detail_model.dart';
 import 'package:grad_project/doctor/features/patients/widgets/doctor_notes_widgets.dart';
 import 'package:grad_project/doctor/features/patients/widgets/patient_info_widgets.dart';
 import 'package:grad_project/doctor/features/patients/widgets/vital_signs_widgets.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 import 'model/patient_model.dart';
 
 import 'widgets/vital_signs_chart.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
-class PatientDetailsPage extends StatelessWidget {
-  final Patient patient;
+class PatientDetailsPage extends StatefulWidget {
+  final String patientId;
+  final Patient? preview;
 
-  const PatientDetailsPage({super.key, required this.patient});
+  const PatientDetailsPage({
+    super.key,
+    required this.patientId,
+    this.preview,
+  });
+
+  @override
+  State<PatientDetailsPage> createState() => _PatientDetailsPageState();
+}
+
+class _PatientDetailsPageState extends State<PatientDetailsPage> {
+  late final DoctorPatientDetailCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = DoctorPatientDetailCubit(
+      patientId: widget.patientId,
+      preview: widget.preview,
+    );
+    Future.microtask(_cubit.loadPatient);
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sample chart data (24 data points for 24 hours)
-    final heartRateData = [
-      68.0,
-      70.0,
-      69.0,
-      72.0,
-      71.0,
-      70.0,
-      68.0,
-      69.0,
-      70.0,
-      71.0,
-      72.0,
-      70.0,
-      69.0,
-      68.0,
-      70.0,
-      71.0,
-      70.0,
-      69.0,
-      68.0,
-      70.0,
-      69.0,
-      70.0,
-      71.0,
-      70.0,
-    ];
-    final bloodPressureData = [
-      105.0,
-      108.0,
-      110.0,
-      120.0,
-      118.0,
-      115.0,
-      112.0,
-      110.0,
-      108.0,
-      110.0,
-      112.0,
-      115.0,
-      118.0,
-      120.0,
-      118.0,
-      115.0,
-      112.0,
-      110.0,
-      108.0,
-      110.0,
-      112.0,
-      115.0,
-      118.0,
-      120.0,
-    ];
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocBuilder<DoctorPatientDetailCubit, DoctorPatientDetailModel>(
+        builder: (context, state) {
+          if (state.isLoading && state.patient == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (state.errorMessage != null && state.patient == null) {
+            return Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        state.errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _cubit.retry,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final patient = state.patient;
+          if (patient == null) {
+            return const Scaffold(
+              body: Center(child: Text('Patient not found')),
+            );
+          }
+
+          return _PatientDetailsBody(
+            patient: patient,
+            isRefreshing: state.isLoading,
+            errorMessage: state.errorMessage,
+            onRetry: _cubit.retry,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PatientDetailsBody extends StatelessWidget {
+  final Patient patient;
+  final bool isRefreshing;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+
+  const _PatientDetailsBody({
+    required this.patient,
+    required this.isRefreshing,
+    this.errorMessage,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final heartRateData = List<double>.filled(24, patient.heartRate.toDouble());
+    final bloodPressureData = List<double>.filled(24, 115.0);
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(16),
@@ -86,11 +140,25 @@ class PatientDetailsPage extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Patient Details',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  Expanded(
+                    child: Text(
+                      patient.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
+                  if (isRefreshing)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -106,7 +174,27 @@ class PatientDetailsPage extends StatelessWidget {
                 ],
               ),
             ),
-            // Scrollable Content
+            if (errorMessage != null)
+              Material(
+                color: Colors.orange.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: TextStyle(color: Colors.orange.shade900),
+                        ),
+                      ),
+                      TextButton(onPressed: onRetry, child: const Text('Retry')),
+                    ],
+                  ),
+                ),
+              ),
             Expanded(
               child: ResponsiveLayout(
                 mobile: SingleChildScrollView(
@@ -114,16 +202,19 @@ class PatientDetailsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _buildPatientContent(
+                      patient,
                       heartRateData,
                       bloodPressureData,
                     ),
                   ),
                 ),
                 tablet: _buildTabletDesktopLayout(
+                  patient,
                   heartRateData,
                   bloodPressureData,
                 ),
                 desktop: _buildTabletDesktopLayout(
+                  patient,
                   heartRateData,
                   bloodPressureData,
                 ),
@@ -136,6 +227,7 @@ class PatientDetailsPage extends StatelessWidget {
   }
 
   Widget _buildTabletDesktopLayout(
+    Patient patient,
     List<double> heartRateData,
     List<double> bloodPressureData,
   ) {
@@ -147,7 +239,6 @@ class PatientDetailsPage extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left Column
               Expanded(
                 flex: 5,
                 child: Column(
@@ -176,7 +267,6 @@ class PatientDetailsPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 24),
-              // Right Column
               Expanded(
                 flex: 4,
                 child: Column(
@@ -200,6 +290,7 @@ class PatientDetailsPage extends StatelessWidget {
   }
 
   List<Widget> _buildPatientContent(
+    Patient patient,
     List<double> heartRateData,
     List<double> bloodPressureData,
   ) {

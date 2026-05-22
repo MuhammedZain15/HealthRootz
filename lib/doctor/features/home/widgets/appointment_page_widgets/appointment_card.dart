@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+import 'package:grad_project/doctor/features/home/models/doctor_appointment_item.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 
 class AppointmentCard extends StatefulWidget {
-  final Map<String, dynamic> data;
+  final DoctorAppointmentItem appointment;
+  final bool isBusy;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
+  final VoidCallback? onComplete;
+  final VoidCallback? onDelete;
 
-  const AppointmentCard({super.key, required this.data});
+  const AppointmentCard({
+    super.key,
+    required this.appointment,
+    this.isBusy = false,
+    this.onApprove,
+    this.onReject,
+    this.onComplete,
+    this.onDelete,
+  });
 
   @override
   State<AppointmentCard> createState() => _AppointmentCardState();
@@ -13,24 +27,74 @@ class AppointmentCard extends StatefulWidget {
 class _AppointmentCardState extends State<AppointmentCard> {
   bool _isExpanded = false;
 
+  Color _statusBg(String status) {
+    switch (status) {
+      case 'Approved':
+        return const Color(0xFFDCFCE7);
+      case 'Completed':
+        return const Color(0xFFE0E7FF);
+      case 'Cancelled':
+        return const Color(0xFFFEE2E2);
+      default:
+        return const Color(0xFFEBF5FF);
+    }
+  }
+
+  Color _statusText(String status) {
+    switch (status) {
+      case 'Approved':
+        return const Color(0xFF166534);
+      case 'Completed':
+        return const Color(0xFF3730A3);
+      case 'Cancelled':
+        return const Color(0xFFB91C1C);
+      default:
+        return const Color(0xFF0067FF);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete appointment?'),
+        content: const Text(
+          'This will permanently remove the appointment.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      widget.onDelete?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusColor = widget.data['status'] == 'Approved'
-        ? const Color(0xFFDCFCE7) // Green 100
-        : const Color(0xFFEBF5FF); // Light Blue
-    final statusTextColor = widget.data['status'] == 'Approved'
-        ? const Color(0xFF166534) // Green 800
-        : const Color(0xFF0067FF); // Blue 800 (Primary Blue)
+    final a = widget.appointment;
+    final isPending = a.status == 'Pending';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -38,13 +102,8 @@ class _AppointmentCardState extends State<AppointmentCard> {
       ),
       child: Column(
         children: [
-          // Header Section (Always Visible)
           InkWell(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
             borderRadius: BorderRadius.vertical(
               top: const Radius.circular(12),
               bottom: Radius.circular(_isExpanded ? 0 : 12),
@@ -56,11 +115,16 @@ class _AppointmentCardState extends State<AppointmentCard> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundImage: AssetImage(widget.data['image'] ?? ''),
                     backgroundColor: Colors.grey[200],
-                    child: widget.data['image'] == null
-                        ? const Icon(Icons.person, color: Colors.grey)
-                        : null,
+                    child: Text(
+                      a.patientName.isNotEmpty
+                          ? a.patientName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0067FF),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -70,27 +134,22 @@ class _AppointmentCardState extends State<AppointmentCard> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              widget.data['name'],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF111827),
+                            Expanded(
+                              child: Text(
+                                a.patientName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF111827),
+                                ),
                               ),
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                _isExpanded
-                                    ? Icons.keyboard_arrow_up
-                                    : Icons.keyboard_arrow_down,
-                                color: Colors.grey[600],
-                                size: 20,
-                              ),
+                            Icon(
+                              _isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Colors.grey[600],
+                              size: 20,
                             ),
                           ],
                         ),
@@ -104,7 +163,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              widget.data['date'],
+                              a.dateLabel,
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 13,
@@ -122,7 +181,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              widget.data['time'],
+                              a.timeLabel,
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 13,
@@ -143,7 +202,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                widget.data['type'],
+                                a.type,
                                 style: TextStyle(
                                   color: Colors.grey[800],
                                   fontSize: 12,
@@ -158,13 +217,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: statusColor,
+                                color: _statusBg(a.status),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                widget.data['status'],
+                                a.status,
                                 style: TextStyle(
-                                  color: statusTextColor,
+                                  color: _statusText(a.status),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -179,8 +238,6 @@ class _AppointmentCardState extends State<AppointmentCard> {
               ),
             ),
           ),
-
-          // Expanded Section
           if (_isExpanded) ...[
             Divider(height: 1, color: Colors.grey[200]),
             Padding(
@@ -189,7 +246,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Reason",
+                    'Reason',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -198,7 +255,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    widget.data['reason'],
+                    a.reason,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -206,14 +263,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  if (widget.data['status'] == 'Pending') ...[
+                  if (widget.isBusy)
+                    const Center(child: CircularProgressIndicator())
+                  else if (isPending) ...[
                     CustomButton(
-                      text: "Approve",
-                      onPressed: () {
-                        // TODO: Implement approve logic
-                      },
-                      color: const Color(0xFF0067FF), // Primary Blue
+                      text: 'Approve',
+                      onPressed: widget.onApprove,
+                      color: const Color(0xFF0067FF),
                       height: 48,
                       textStyle: const TextStyle(
                         color: Colors.white,
@@ -227,71 +283,44 @@ class _AppointmentCardState extends State<AppointmentCard> {
                     Row(
                       children: [
                         Expanded(
-                          child: InkWell(
-                            onTap: () {},
-                            borderRadius: BorderRadius.circular(15),
-                            child: Container(
-                              height: 48,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Color(0xFF4B5563),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(
-                                    Icons.refresh,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    "Reschedule",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: CustomButton(
+                            text: 'Reject',
+                            onPressed: widget.onReject,
+                            color: const Color(0xFFDC2626),
+                            height: 48,
+                            filled: true,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: InkWell(
-                            onTap: () {},
-                            borderRadius: BorderRadius.circular(15),
-                            child: Container(
-                              height: 48,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFDC2626),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(
-                                    Icons.close_rounded,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    "Reject",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: CustomButton(
+                            text: 'Delete',
+                            onPressed: _confirmDelete,
+                            color: const Color(0xFF4B5563),
+                            height: 48,
+                            filled: true,
                           ),
                         ),
                       ],
+                    ),
+                  ] else ...[
+                    if (a.status == 'Approved')
+                      CustomButton(
+                        text: 'Mark Completed',
+                        onPressed: widget.onComplete,
+                        color: const Color(0xFF0067FF),
+                        height: 48,
+                        width: double.infinity,
+                        filled: true,
+                      ),
+                    const SizedBox(height: 12),
+                    CustomButton(
+                      text: 'Delete',
+                      onPressed: _confirmDelete,
+                      color: const Color(0xFFDC2626),
+                      height: 48,
+                      width: double.infinity,
+                      filled: true,
                     ),
                   ],
                 ],

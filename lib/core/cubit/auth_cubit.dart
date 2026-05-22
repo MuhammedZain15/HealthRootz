@@ -24,10 +24,7 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(state.copyWith(status: AuthStatus.loading));
 
-    final result = await _authService.login(
-      email: email,
-      password: password,
-    );
+    final result = await _authService.login(email: email, password: password);
 
     if (result.success && result.data != null) {
       final newState = state.copyWith(
@@ -53,6 +50,13 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
     required String role,
+    String? phone,
+    String? address,
+    String? specialty,
+    String? licenseNumber,
+    int? age,
+    String? gender,
+    String? medicalHistory,
   }) async {
     emit(state.copyWith(status: AuthStatus.loading));
 
@@ -61,6 +65,13 @@ class AuthCubit extends Cubit<AuthState> {
       email: email,
       password: password,
       role: role,
+      phone: phone,
+      address: address,
+      specialty: specialty,
+      licenseNumber: licenseNumber,
+      age: age,
+      gender: gender,
+      medicalHistory: medicalHistory,
     );
 
     if (result.success && result.data != null) {
@@ -74,6 +85,30 @@ class AuthCubit extends Cubit<AuthState> {
       final newState = state.copyWith(
         status: AuthStatus.error,
         errorMessage: result.message ?? 'Registration failed',
+      );
+      emit(newState);
+      return newState;
+    }
+  }
+
+  // ─── Update Profile ────────────────────────────────────────────────
+
+  Future<AuthState> updateProfile(Map<String, dynamic> updates) async {
+    emit(state.copyWith(status: AuthStatus.loading));
+
+    final result = await _authService.updateProfile(updates);
+
+    if (result.success && result.data != null) {
+      final newState = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: result.data,
+      );
+      emit(newState);
+      return newState;
+    } else {
+      final newState = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: result.message ?? 'Profile update failed',
       );
       emit(newState);
       return newState;
@@ -94,14 +129,30 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await _authService.getProfile();
 
     if (result.success && result.data != null) {
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        user: result.data,
-      ));
+      emit(state.copyWith(status: AuthStatus.authenticated, user: result.data));
     } else {
       // Token expired or invalid — clear and go to login
       await TokenStorage.clearAll();
       emit(state.copyWith(status: AuthStatus.unauthenticated));
+    }
+  }
+
+  // ─── Get Profile (Refresh) ────────────────────────────────────────
+
+  Future<void> fetchProfile() async {
+    emit(state.copyWith(status: AuthStatus.loading));
+
+    final result = await _authService.getProfile();
+
+    if (result.success && result.data != null) {
+      emit(state.copyWith(status: AuthStatus.authenticated, user: result.data));
+    } else {
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: result.message ?? 'Failed to fetch profile',
+        ),
+      );
     }
   }
 
@@ -129,11 +180,7 @@ class AuthState {
   final UserModel? user;
   final String? errorMessage;
 
-  const AuthState({
-    required this.status,
-    this.user,
-    this.errorMessage,
-  });
+  const AuthState({required this.status, this.user, this.errorMessage});
 
   factory AuthState.initial() => const AuthState(status: AuthStatus.initial);
 

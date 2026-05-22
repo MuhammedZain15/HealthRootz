@@ -4,7 +4,7 @@ import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/core/network/api_client.dart';
 import 'package:grad_project/splash.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiClient.instance.init();
   runApp(const MyApp());
@@ -16,11 +16,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
+    return BlocProvider<AuthCubit>(
       create: (_) => AuthCubit(),
       child: MaterialApp(
         theme: ThemeData(scaffoldBackgroundColor: Colors.white),
-        title: 'HealthRootz',
+        title: 'Health Rootz',
         debugShowCheckedModeBanner: false,
         home: const SplashScreen(),
       ),

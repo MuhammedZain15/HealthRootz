@@ -3,7 +3,7 @@ import 'package:gif_view/gif_view.dart';
 import 'package:grad_project/app_colors.dart';
 
 import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 
 import '../../../generated/assets.dart';
 

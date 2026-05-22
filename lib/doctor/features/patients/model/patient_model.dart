@@ -11,6 +11,9 @@ class Patient {
   final String? allergies;
   final DateTime? lastVisit;
   final String? address;
+  final String? gender;
+  final String? condition;
+  final String? medicalHistory;
 
   Patient({
     required this.id,
@@ -25,6 +28,9 @@ class Patient {
     this.allergies,
     this.lastVisit,
     this.address,
+    this.gender,
+    this.condition,
+    this.medicalHistory,
   });
 
   String get initials {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 import '../model/patient_model.dart';
 
 class PatientCard extends StatelessWidget {

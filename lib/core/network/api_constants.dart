@@ -15,8 +15,9 @@ class ApiConstants {
 
   // ─── Patients ──────────────────────────────────────────────────────
   static const String patients = '/patients';
+  static const String patientMe = '/patients/me';
   static String patientById(String id) => '/patients/$id';
-  static String patientDetails(String id) => '/patients/$id/details';
+  static String addNote(String id) => '/patients/$id/notes';
 
   // ─── Alerts ────────────────────────────────────────────────────────
   static const String alerts = '/alerts';
@@ -24,6 +25,7 @@ class ApiConstants {
 
   // ─── Appointments ──────────────────────────────────────────────────
   static const String appointments = '/appointments';
+  static const String appointmentSlots = '/appointments/slots';
   static String appointmentById(String id) => '/appointments/$id';
 
   // ─── Reports ───────────────────────────────────────────────────────
@@ -31,10 +33,10 @@ class ApiConstants {
   static String reportById(String id) => '/reports/$id';
 
   // ─── Chat ──────────────────────────────────────────────────────────
-  static const String chat = '/chat';
-  static String chatMessages(String patientId) => '/chat/$patientId';
-  static String markAsRead(String patientId) => '/chat/$patientId/read';
+  static const String chat = '/messages';
+  static String chatMessages(String patientId) => '/messages/$patientId';
+  static String markAsRead(String patientId) => '/messages/$patientId/read';
 
   // ─── Dashboard ─────────────────────────────────────────────────────
-  static const String dashboardSummary = '/dashboard/summary';
+  static const String dashboardSummary = '/dashboard/stats';
 }

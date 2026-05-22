@@ -1,131 +1,168 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/patient/features/alerts/cubit/patient_alerts_cubit.dart';
+import 'package:grad_project/patient/features/alerts/models/patient_alert_item.dart';
+import 'package:grad_project/patient/features/alerts/models/patient_alerts_list_model.dart';
+import 'package:grad_project/patient/features/alerts/widgets/alert_card.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
-import 'widgets/alert_card.dart';
 
-class AlertsPage extends StatelessWidget {
+class AlertsPage extends StatefulWidget {
   const AlertsPage({super.key});
 
   @override
+  State<AlertsPage> createState() => _AlertsPageState();
+}
+
+class _AlertsPageState extends State<AlertsPage> {
+  late final PatientAlertsCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = PatientAlertsCubit();
+    Future.microtask(_cubit.loadAlerts);
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          "Alerts",
-          style: TextStyle(
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: ResponsiveLayout(
-            mobile: _buildAlertsList(context, 1),
-            tablet: _buildAlertsList(context, 2),
-            desktop: _buildAlertsList(context, 3),
-          ),
-        ),
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocConsumer<PatientAlertsCubit, PatientAlertsListModel>(
+        listener: (context, state) {
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.successMessage!)),
+            );
+            _cubit.clearMessages();
+          }
+          if (state.errorMessage != null && !state.isLoading) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: Colors.red.shade700,
+              ),
+            );
+            _cubit.clearMessages();
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            appBar: AppBar(
+              title: const Text(
+                'Alerts',
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: false,
+            ),
+            body: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: state.isLoading && state.alerts.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : state.errorMessage != null && state.alerts.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(state.errorMessage!),
+                                const SizedBox(height: 12),
+                                FilledButton(
+                                  onPressed: _cubit.retry,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ResponsiveLayout(
+                            mobile: _buildList(context, state, 1),
+                            tablet: _buildList(context, state, 2),
+                            desktop: _buildList(context, state, 3),
+                          ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildAlertsList(BuildContext context, int crossAxisCount) {
-    final alerts = [
-      {
-        'title': 'Hydration Reminder',
-        'message':
-            'Drink more water throughout the day to maintain optimal health',
-        'dateTime': 'Jan 26, 2025 at 5:23 PM',
-        'icon': Icons.water_drop_rounded,
-        'bgColor': const Color(0xFFE0F2FE),
-        'iconColor': const Color(0xFF0EA5E9),
-      },
-      {
-        'title': 'Caffeine Intake',
-        'message':
-            'Consider reducing caffeine consumption for better heart health',
-        'dateTime': 'Jan 26, 2025 at 2:23 PM',
-        'icon': Icons.coffee_rounded,
-        'bgColor': const Color(0xFFFEF3C7),
-        'iconColor': const Color(0xFFD97706),
-      },
-      {
-        'title': 'Physical Activity',
-        'message': 'Perfect time for a quick 15-minute walk!',
-        'dateTime': 'Jan 26, 2025 at 11:45 AM',
-        'icon': Icons.directions_walk_rounded,
-        'bgColor': const Color(0xFFDCFCE7),
-        'iconColor': const Color(0xFF16A34A),
-      },
-      {
-        'title': 'Sleep Pattern',
-        'message':
-            'Your sleep last night was slightly below average. Try to sleep early tonight.',
-        'dateTime': 'Jan 26, 2025 at 8:00 AM',
-        'icon': Icons.nights_stay_rounded,
-        'bgColor': const Color(0xFFF3E8FF),
-        'iconColor': const Color(0xFF9333EA),
-      },
-      {
-        'title': 'Medication Reminder',
-        'message': 'Time to take your scheduled medications.',
-        'dateTime': 'Jan 25, 2025 at 9:00 PM',
-        'icon': Icons.medication_rounded,
-        'bgColor': const Color(0xFFFEE2E2),
-        'iconColor': const Color(0xFFEF4444),
-      },
-    ];
+  Widget _buildList(
+    BuildContext context,
+    PatientAlertsListModel state,
+    int crossAxisCount,
+  ) {
+    final alerts = state.activeAlerts;
+
+    if (alerts.isEmpty && !state.isLoading) {
+      return const Center(
+        child: Text(
+          'No active alerts',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    Widget buildCard(PatientAlertItem item) {
+      return AlertCard(
+        title: item.title,
+        message: item.message,
+        dateTime: item.dateTimeLabel,
+        icon: item.icon,
+        iconBgColor: item.iconBgColor,
+        iconColor: item.iconColor,
+        onGotIt: state.isUpdating
+            ? () {}
+            : () => _cubit.acknowledge(item.id),
+        onClose: state.isUpdating
+            ? () {}
+            : () => _cubit.dismiss(item.id),
+      );
+    }
 
     if (crossAxisCount == 1) {
-      return ListView.separated(
-        itemCount: alerts.length,
-        padding: const EdgeInsets.only(bottom: 20),
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final alert = alerts[index];
-          return AlertCard(
-            title: alert['title'] as String,
-            message: alert['message'] as String,
-            dateTime: alert['dateTime'] as String,
-            icon: alert['icon'] as IconData,
-            iconBgColor: alert['bgColor'] as Color,
-            iconColor: alert['iconColor'] as Color,
-            onGotIt: () {},
-            onClose: () {},
-          );
-        },
+      return RefreshIndicator(
+        onRefresh: _cubit.loadAlerts,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 20),
+          itemCount: alerts.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) => buildCard(alerts[index]),
+        ),
       );
-    } else {
-      return GridView.builder(
-        itemCount: alerts.length,
+    }
+
+    return RefreshIndicator(
+      onRefresh: _cubit.loadAlerts,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.35,
         ),
-        itemBuilder: (context, index) {
-          final alert = alerts[index];
-          return AlertCard(
-            title: alert['title'] as String,
-            message: alert['message'] as String,
-            dateTime: alert['dateTime'] as String,
-            icon: alert['icon'] as IconData,
-            iconBgColor: alert['bgColor'] as Color,
-            iconColor: alert['iconColor'] as Color,
-            onGotIt: () {},
-            onClose: () {},
-          );
-        },
-      );
-    }
+        itemCount: alerts.length,
+        itemBuilder: (context, index) => buildCard(alerts[index]),
+      ),
+    );
   }
 }

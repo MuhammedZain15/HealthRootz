@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/doctor/features/alert/model/alert_model.dart';
+import 'package:grad_project/doctor/features/alert/models/doctor_alert_item.dart';
 import 'package:grad_project/doctor/features/patients/patient_details_page.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 import 'package:intl/intl.dart';
 
 class AlertCard extends StatelessWidget {
-  final DoctorAlert alert;
+  final DoctorAlertItem alert;
+  final bool isBusy;
   final VoidCallback? onMarkSolved;
 
-  const AlertCard({super.key, required this.alert, this.onMarkSolved});
+  const AlertCard({
+    super.key,
+    required this.alert,
+    this.isBusy = false,
+    this.onMarkSolved,
+  });
 
   Color _getBackgroundColor() {
     switch (alert.severity) {
@@ -118,7 +125,7 @@ class AlertCard extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            alert.patient.name,
+                            alert.patientName,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -220,7 +227,10 @@ class AlertCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              PatientDetailsPage(patient: alert.patient),
+                              PatientDetailsPage(
+                                patientId: alert.patientId,
+                                preview: alert.toPatientPreview(),
+                              ),
                         ),
                       );
                     },
@@ -233,7 +243,7 @@ class AlertCard extends StatelessWidget {
                       text: "Mark Solved",
                       filled: false,
                       color: AppColors.skyBlue,
-                      onPressed:onMarkSolved,
+                      onPressed: isBusy ? null : onMarkSolved,
                     ),
 
                   ),

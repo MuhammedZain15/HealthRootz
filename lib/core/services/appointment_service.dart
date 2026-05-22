@@ -9,56 +9,77 @@ import '../network/api_response.dart';
 class AppointmentService {
   final Dio _dio = ApiClient.instance.dio;
 
-  // ─── Create Appointment ────────────────────────────────────────────
-
-  Future<ApiResponse<AppointmentModel>> createAppointment(
-      AppointmentModel appointment) async {
+  Future<ApiResponse<AppointmentModel>> createAppointment({
+    required String patientId,
+    required String dateIso,
+    required String reason,
+  }) async {
     try {
       final response = await _dio.post(
         ApiConstants.appointments,
-        data: appointment.toJson(),
+        data: {
+          'patientId': patientId,
+          'date': dateIso,
+          'reason': reason,
+        },
       );
       return ApiResponse(
         success: true,
-        data: AppointmentModel.fromJson(response.data),
+        data: AppointmentModel.fromJson(
+          _unwrapMap(response.data) ?? <String, dynamic>{},
+        ),
       );
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
   }
 
-  // ─── Get All Appointments ──────────────────────────────────────────
-
   Future<ApiResponse<List<AppointmentModel>>> getAllAppointments() async {
     try {
       final response = await _dio.get(ApiConstants.appointments);
-      final List data = response.data is List ? response.data : response.data['data'] ?? [];
-      final appointments =
-          data.map((e) => AppointmentModel.fromJson(e)).toList();
+      final list = _unwrapList(response.data);
+      final appointments = list
+          .whereType<Map>()
+          .map((e) => AppointmentModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
       return ApiResponse(success: true, data: appointments);
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
   }
 
-  // ─── Get Appointment By ID ─────────────────────────────────────────
+  Future<ApiResponse<List<String>>> getAvailableSlots({
+    required String date,
+  }) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.appointmentSlots,
+        queryParameters: {'date': date},
+      );
+      return ApiResponse(success: true, data: _parseSlots(response.data));
+    } on DioException catch (e) {
+      return ApiResponse(success: false, message: _extractError(e));
+    }
+  }
 
   Future<ApiResponse<AppointmentModel>> getAppointmentById(String id) async {
     try {
       final response = await _dio.get(ApiConstants.appointmentById(id));
       return ApiResponse(
         success: true,
-        data: AppointmentModel.fromJson(response.data),
+        data: AppointmentModel.fromJson(
+          _unwrapMap(response.data) ?? <String, dynamic>{},
+        ),
       );
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
   }
 
-  // ─── Update Appointment ────────────────────────────────────────────
-
   Future<ApiResponse<AppointmentModel>> updateAppointment(
-      String id, Map<String, dynamic> updates) async {
+    String id,
+    Map<String, dynamic> updates,
+  ) async {
     try {
       final response = await _dio.put(
         ApiConstants.appointmentById(id),
@@ -66,14 +87,14 @@ class AppointmentService {
       );
       return ApiResponse(
         success: true,
-        data: AppointmentModel.fromJson(response.data),
+        data: AppointmentModel.fromJson(
+          _unwrapMap(response.data) ?? <String, dynamic>{},
+        ),
       );
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
   }
-
-  // ─── Delete Appointment ────────────────────────────────────────────
 
   Future<ApiResponse<void>> deleteAppointment(String id) async {
     try {
@@ -84,7 +105,53 @@ class AppointmentService {
     }
   }
 
-  // ─── Helpers ───────────────────────────────────────────────────────
+  List<String> _parseSlots(dynamic body) {
+    dynamic raw = body;
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      raw = map['data'] ?? map['slots'] ?? body;
+      if (raw is Map) {
+        raw = raw['slots'] ?? raw['availableSlots'] ?? raw;
+      }
+    }
+
+    if (raw is List) {
+      return raw.map((e) {
+        if (e is String) return e;
+        if (e is Map) {
+          return (e['time'] ?? e['slot'] ?? e['label'])?.toString() ?? '';
+        }
+        return e.toString();
+      }).where((s) => s.isNotEmpty).toList();
+    }
+    return [];
+  }
+
+  Map<String, dynamic>? _unwrapMap(dynamic body) {
+    if (body is Map<String, dynamic>) {
+      if (body['data'] is Map<String, dynamic>) {
+        return body['data'] as Map<String, dynamic>;
+      }
+      return body;
+    }
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      if (map['data'] is Map) {
+        return Map<String, dynamic>.from(map['data'] as Map);
+      }
+      return map;
+    }
+    return null;
+  }
+
+  List<dynamic> _unwrapList(dynamic body) {
+    if (body is List) return body;
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      if (map['data'] is List) return map['data'] as List;
+    }
+    return [];
+  }
 
   String _extractError(DioException e) {
     if (e.response?.data is Map) {

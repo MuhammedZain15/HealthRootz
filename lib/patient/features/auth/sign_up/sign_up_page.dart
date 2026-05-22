@@ -6,7 +6,7 @@ import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/doctor/doctor_layout.dart';
 import 'package:grad_project/patient/layout/patient_layout.dart';
 import '../sign_in/sign_in_page.dart';
-import '../widgets/custom_button.dart';
+import 'package:grad_project/shared/widgets/custom_button.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -48,6 +48,8 @@ class _SignUpPageState extends State<SignUpPage> {
       email: _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
       role: _role!,
+      age: int.tryParse(_ageCtrl.text.trim()),
+      medicalHistory: _medicalCtrl.text.trim().isNotEmpty ? _medicalCtrl.text.trim() : null,
     );
 
     setState(() => _isLoading = false);

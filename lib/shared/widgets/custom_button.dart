@@ -1,7 +1,7 @@
-// dart
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
 
+/// Shared primary/secondary action button used across doctor and patient UI.
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -45,13 +45,12 @@ class CustomButton extends StatelessWidget {
               borderRadius: radius,
               border: filled
                   ? null
-                  : Border.all(color: bColor.withOpacity(0.6), width: 1.2),
+                  : Border.all(color: bColor.withValues(alpha: 0.6), width: 1.2),
             ),
             alignment: Alignment.center,
             child: Text(
               text,
-              style:
-                  textStyle ??
+              style: textStyle ??
                   TextStyle(
                     color: filled ? Colors.white : bColor,
                     fontWeight: FontWeight.bold,

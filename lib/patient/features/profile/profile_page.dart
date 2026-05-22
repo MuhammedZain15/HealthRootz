@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:grad_project/shared/widgets/responsive_layout.dart';
-import 'widgets/profile_header_card.dart';
-import 'widgets/profile_info_card.dart';
-import 'widgets/profile_logout_button.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
-import 'widgets/profile_medication_card.dart';
-import 'widgets/profile_section_title.dart';
+import 'package:grad_project/patient/features/profile/cubit/patient_profile_cubit.dart';
+import 'package:grad_project/patient/features/profile/edit_profile_card.dart';
+import 'package:grad_project/patient/features/profile/models/patient_profile_model.dart';
+import 'package:grad_project/patient/features/profile/widgets/patient_profile_body.dart';
 
+/// Patient profile screen (MVVM via [PatientProfileCubit]).
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -17,26 +16,22 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String name = 'Loading...';
-  String email = 'Loading...';
-  final String phone = '+1 (555) 789-1234';
-  final String dateOfBirth = 'March 15, 1992';
-  final String address = 'Cairo, Egypt';
-  final String bloodType = 'A+';
-  final String height = '178 cm';
-  final String weight = '75 kg';
+  late final PatientProfileCubit _profileCubit;
 
   @override
   void initState() {
     super.initState();
-    final user = context.read<AuthCubit>().user;
-    if (user != null) {
-      name = user.name ?? "";
-      email = user.email ?? "";
-    }
+    _profileCubit = PatientProfileCubit(context.read<AuthCubit>());
+    Future.microtask(_profileCubit.initialize);
   }
 
-  void _logout() async {
+  @override
+  void dispose() {
+    _profileCubit.close();
+    super.dispose();
+  }
+
+  Future<void> _logout() async {
     await context.read<AuthCubit>().logout();
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pushReplacement(
@@ -44,254 +39,80 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void _showEditDialog(PatientProfileModel profile) {
+    EditProfileCard.show(
+      context,
+      initialName: profile.name ?? '',
+      initialAge: profile.age?.toString() ?? '',
+      initialMedical: profile.medicalHistory ?? '',
+      onSave: (newName, newAge, newMedical) async {
+        final ok = await _profileCubit.updateBasicInfo(
+          name: newName,
+          age: int.tryParse(newAge) ?? profile.age ?? 0,
+          medicalHistory: newMedical,
+        );
+        if (!mounted) return;
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (_profileCubit.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_profileCubit.errorMessage!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F8FF),
-      body: SafeArea(
-        child: ResponsiveLayout(
-          mobile: _buildMobileLayout(),
-          tablet: _buildTabletDesktopLayout(context),
-          desktop: _buildTabletDesktopLayout(context),
-        ),
+    return BlocProvider.value(
+      value: _profileCubit,
+      child: BlocConsumer<PatientProfileCubit, PatientProfileModel>(
+        listener: (context, state) {
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.successMessage!)),
+            );
+            _profileCubit.clearSuccess();
+          }
+        },
+        builder: (context, profile) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF4F8FF),
+            body: SafeArea(
+              child: profile.isLoading && profile.name == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : profile.errorMessage != null && profile.name == null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(profile.errorMessage!),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                onPressed: _profileCubit.retry,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : PatientProfileBody(
+                          profile: profile,
+                          onLogout: _logout,
+                          onEdit: () => _showEditDialog(profile),
+                        ),
+            ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 18),
-          _buildPersonalSection(),
-          const SizedBox(height: 18),
-          _buildMedicalSection(),
-          const SizedBox(height: 18),
-          _buildMedicationSection(),
-          const SizedBox(height: 18),
-          _buildEmergencySection(),
-          const SizedBox(height: 18),
-          _buildSettingsSection(),
-          const SizedBox(height: 16),
-          ProfileLogoutButton(onPressed: _logout),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabletDesktopLayout(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 24),
-                    _buildPersonalSection(),
-                    const SizedBox(height: 24),
-                    _buildSettingsSection(),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildMedicalSection(),
-                    const SizedBox(height: 24),
-                    _buildMedicationSection(),
-                    const SizedBox(height: 24),
-                    _buildEmergencySection(),
-                    const SizedBox(height: 32),
-                    ProfileLogoutButton(onPressed: _logout),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return ProfileHeaderCard(name: name, email: email, onEdit: () {});
-  }
-
-  Widget _buildPersonalSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ProfileSectionTitle(title: 'Personal Information'),
-        const SizedBox(height: 12),
-        ProfileInfoCard(
-          items: [
-            ProfileInfoItem(
-              title: 'Full Name',
-              value: name,
-              icon: Icons.person_outline,
-              iconBg: const Color(0xFFEFF6FF),
-              iconColor: const Color(0xFF38B6FF),
-            ),
-            ProfileInfoItem(
-              title: 'Email',
-              value: email,
-              icon: Icons.email_outlined,
-              iconBg: const Color(0xFFEFFDF9),
-              iconColor: const Color(0xFF10B981),
-            ),
-            ProfileInfoItem(
-              title: 'Phone',
-              value: phone,
-              icon: Icons.phone_outlined,
-              iconBg: const Color(0xFFF5F0FF),
-              iconColor: const Color(0xFF8B5CF6),
-            ),
-            ProfileInfoItem(
-              title: 'Date of Birth',
-              value: dateOfBirth,
-              icon: Icons.calendar_month_outlined,
-              iconBg: const Color(0xFFFFF6E7),
-              iconColor: const Color(0xFFF97316),
-            ),
-            ProfileInfoItem(
-              title: 'Address',
-              value: address,
-              icon: Icons.location_on_outlined,
-              iconBg: const Color(0xFFF1FFF5),
-              iconColor: const Color(0xFF16A34A),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMedicalSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ProfileSectionTitle(title: 'Medical Information'),
-        const SizedBox(height: 12),
-        ProfileInfoCard(
-          items: [
-            ProfileInfoItem(
-              title: 'Blood Type',
-              value: bloodType,
-              icon: Icons.favorite_border,
-              iconBg: const Color(0xFFFFF1F2),
-              iconColor: const Color(0xFFEF4444),
-            ),
-            ProfileInfoItem(
-              title: 'Height',
-              value: height,
-              icon: Icons.monitor_heart_outlined,
-              iconBg: const Color(0xFFEFF6FF),
-              iconColor: const Color(0xFF3B82F6),
-            ),
-            ProfileInfoItem(
-              title: 'Weight',
-              value: weight,
-              icon: Icons.monitor_weight_outlined,
-              iconBg: const Color(0xFFEFF2FF),
-              iconColor: const Color(0xFF6366F1),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMedicationSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ProfileSectionTitle(title: 'Current Medications'),
-        const SizedBox(height: 12),
-        const ProfileMedicationCard(
-          title: 'Aspirin 81mg',
-          subtitle: 'Take once daily  •  Ongoing',
-          nextDose: 'Next dose: 8:00 AM',
-          tint: Color(0xFFF0FDF4),
-          accent: Color(0xFF22C55E),
-        ),
-        const SizedBox(height: 12),
-        const ProfileMedicationCard(
-          title: 'Lisinopril 10mg',
-          subtitle: 'Take once daily  •  3 months',
-          nextDose: 'Next dose: 8:00 AM',
-          tint: Color(0xFFF8F0FF),
-          accent: Color(0xFF8B5CF6),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmergencySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ProfileSectionTitle(title: 'Emergency Contacts'),
-        const SizedBox(height: 12),
-        const ProfileInfoCard(
-          items: [
-            ProfileInfoItem(
-              title: 'Primary Contact',
-              value: 'Family Member\n+1 (555) 987-6543',
-              icon: Icons.warning_amber_outlined,
-              iconBg: Color(0xFFFFF1F2),
-              iconColor: Color(0xFFEF4444),
-              multiline: true,
-            ),
-            ProfileInfoItem(
-              title: 'Dr. Sarah Johnson',
-              value: 'Cardiologist\n+1 (555) 123-4567',
-              icon: Icons.person_add_alt_1_outlined,
-              iconBg: Color(0xFFFFF6E7),
-              iconColor: Color(0xFFF97316),
-              multiline: true,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettingsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const ProfileSectionTitle(title: 'Settings'),
-        const SizedBox(height: 12),
-        const ProfileInfoCard(
-          items: [
-            ProfileInfoItem(
-              title: 'Notifications',
-              value: 'Manage notification preferences',
-              icon: Icons.notifications_none,
-              iconBg: Color(0xFFEFF6FF),
-              iconColor: Color(0xFF38B6FF),
-            ),
-            ProfileInfoItem(
-              title: 'Privacy & Security',
-              value: 'Control your data and privacy',
-              icon: Icons.shield_outlined,
-              iconBg: Color(0xFFEFFDF9),
-              iconColor: Color(0xFF10B981),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

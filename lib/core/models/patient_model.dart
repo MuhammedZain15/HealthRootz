@@ -27,19 +27,36 @@ class PatientModel {
   });
 
   factory PatientModel.fromJson(Map<String, dynamic> json) {
+    final data = json.containsKey('data') && json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : json;
+
+    int? parseAge(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      return int.tryParse(value.toString());
+    }
+
     return PatientModel(
-      id: json['_id'] as String?,
-      name: json['name'] as String?,
-      email: json['email'] as String?,
-      age: json['age'] as int?,
-      phone: json['phone'] as String?,
-      gender: json['gender'] as String?,
-      medicalHistory: json['medicalHistory'] as String?,
-      condition: json['condition'] as String?,
-      status: json['status'] as String?,
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
+      id: (data['_id'] ?? data['id'] ?? json['_id'] ?? json['id']) as String?,
+      name: (data['name'] ?? json['name']) as String?,
+      email: (data['email'] ?? json['email']) as String?,
+      age: parseAge(data['age'] ?? json['age']),
+      phone: (data['phone'] ?? json['phone']) as String?,
+      gender: (data['gender'] ?? json['gender']) as String?,
+      medicalHistory:
+          (data['medicalHistory'] ?? json['medicalHistory']) as String?,
+      condition: (data['condition'] ?? json['condition']) as String?,
+      status: (data['status'] ?? json['status']) as String?,
+      createdAt: (data['createdAt'] ?? json['createdAt']) as String?,
+      updatedAt: (data['updatedAt'] ?? json['updatedAt']) as String?,
     );
+  }
+
+  /// Parses GET /patients list items (raw patient maps).
+  factory PatientModel.fromApi(dynamic json) {
+    if (json is Map<String, dynamic>) return PatientModel.fromJson(json);
+    throw ArgumentError('Invalid patient JSON');
   }
 
   Map<String, dynamic> toJson() {

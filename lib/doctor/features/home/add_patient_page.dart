@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/patient/features/auth/widgets/custom_button.dart';
-import 'package:grad_project/doctor/features/home/widgets/patient_page_widgets/custom_labeled_input.dart';
+import 'package:grad_project/doctor/features/home/cubit/add_patient_cubit.dart';
+import 'package:grad_project/doctor/features/home/models/add_patient_model.dart';
+import 'package:grad_project/doctor/features/home/widgets/add_patient_form.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
+/// Page: add patient (MVVM via [AddPatientCubit]).
 class AddPatientPage extends StatefulWidget {
   const AddPatientPage({super.key});
 
@@ -12,167 +15,128 @@ class AddPatientPage extends StatefulWidget {
 }
 
 class _AddPatientPageState extends State<AddPatientPage> {
+  late final AddPatientCubit _cubit;
+  final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _conditionController = TextEditingController();
+  final _medicalHistoryController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = AddPatientCubit();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _ageController.dispose();
+    _phoneController.dispose();
+    _conditionController.dispose();
+    _medicalHistoryController.dispose();
+    _cubit.close();
+    super.dispose();
+  }
+
+  void _syncFormToCubit() {
+    _cubit.update(
+      name: _nameController.text,
+      email: _emailController.text,
+      age: _ageController.text,
+      phone: _phoneController.text,
+      condition: _conditionController.text,
+      medicalHistory: _medicalHistoryController.text,
+    );
+  }
+
+  Future<void> _onSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _syncFormToCubit();
+    final (success, patient) = await _cubit.submit();
+    if (!mounted) return;
+
+    if (success && patient != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Patient ${patient.name ?? 'added'} created successfully',
+          ),
+          backgroundColor: AppColors.skyBlue,
+        ),
+      );
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } else if (_cubit.state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_cubit.state.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: const Text(
-          "Add New Patient",
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: ResponsiveLayout(
-          mobile: _buildForm(context),
-          tablet: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: _buildForm(context),
-            ),
-          ),
-          desktop: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: _buildForm(context),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocBuilder<AddPatientCubit, AddPatientModel>(
+        builder: (context, state) {
+          final form = AddPatientForm(
+            formKey: _formKey,
+            state: state,
+            cubit: _cubit,
+            nameController: _nameController,
+            emailController: _emailController,
+            ageController: _ageController,
+            phoneController: _phoneController,
+            conditionController: _conditionController,
+            medicalHistoryController: _medicalHistoryController,
+            onSubmit: _onSubmit,
+            onCancel: () => Navigator.pop(context),
+          );
 
-  Widget _buildForm(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeaderCard(),
-          const SizedBox(height: 20),
-          const CustomLabeledInput(
-            label: "Full Name",
-            hint: "Enter patient's full name",
-            prefixIcon: Icons.person_outline,
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              const Expanded(
-                child: CustomLabeledInput(
-                  label: "Age",
-                  hint: "Enter age",
-                  prefixIcon: Icons.calendar_today_outlined,
-                  keyboardType: TextInputType.number,
+          return Scaffold(
+            backgroundColor: const Color(0xFFF9FAFB),
+            appBar: AppBar(
+              title: const Text(
+                'Add New Patient',
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: const CustomLabeledInput(
-                  label: "Gender",
-                  hint: "Male",
-                  prefixIcon: Icons.person_outline,
-                  keyboardType: TextInputType.name,
-                ),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+                onPressed: state.isLoading ? null : () => Navigator.pop(context),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const CustomLabeledInput(
-            label: "Email Address",
-            hint: "patient@email.com",
-            prefixIcon: Icons.mail_outline,
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 20),
-          const CustomLabeledInput(
-            label: "Phone Number",
-            hint: "+1 (555) 123-4567",
-            prefixIcon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 20),
-          const CustomLabeledInput(
-            label: "Medical Notes",
-            hint: "Enter any relevant medical history or notes...",
-            prefixIcon: Icons.description_outlined,
-            maxLines: 4,
-            isRequired: false,
-          ),
-          const SizedBox(height: 40),
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: "Add Patient",
-                  onPressed: () {},
-                  color: AppColors.skyBlue,
-                  height: 50,
-                  textStyle: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            ),
+            body: SafeArea(
+              child: ResponsiveLayout(
+                mobile: form,
+                tablet: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: form,
+                  ),
+                ),
+                desktop: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: form,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: CustomButton(
-                  text: "Cancel",
-                  onPressed: () => Navigator.pop(context),
-                  filled: false,
-                  borderColor: Colors.grey[300],
-                  height: 50,
-                  textStyle: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Patient Information",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Fill in the patient information below",
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

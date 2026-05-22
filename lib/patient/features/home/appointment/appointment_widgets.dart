@@ -181,23 +181,17 @@ class DoctorCard extends StatelessWidget {
 class DateSelector extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onSelected;
+  final List<Map<String, String>> days;
 
   const DateSelector({
     super.key,
     required this.selectedIndex,
     required this.onSelected,
+    required this.days,
   });
 
   @override
   Widget build(BuildContext context) {
-    final days = [
-      {'day': 'Mon', 'date': '9'},
-      {'day': 'Tue', 'date': '10'},
-      {'day': 'Wed', 'date': '11'},
-      {'day': 'Thu', 'date': '12'},
-      {'day': 'Fri', 'date': '13'},
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -283,48 +277,54 @@ class DateSelector extends StatelessWidget {
 class TimeSlotGrid extends StatelessWidget {
   final int? selectedIndex;
   final Function(int) onSelected;
+  final List<String> slots;
+  final bool isLoading;
 
   const TimeSlotGrid({
     super.key,
     required this.selectedIndex,
     required this.onSelected,
+    required this.slots,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final times = [
-      "09:00 AM",
-      "09:30 AM",
-      "10:00 AM",
-      "10:30 AM",
-      "11:00 AM",
-      "11:30 AM",
-      "12:00 PM",
-      "12:30 PM",
-      "01:00 PM",
-      "01:30 PM",
-      "02:00 PM",
-      "02:30 PM",
-      "03:00 PM",
-      "03:30 PM",
-      "04:00 PM",
-      "04:30 PM",
-      "05:00 PM",
-      "05:30 PM",
-      "06:00 PM",
-      "06:30 PM",
-      "07:00 PM",
-      "07:30 PM",
-      "08:00 PM",
-      "08:30 PM",
-      "09:00 PM",
-      "09:30 PM",
-      "10:00 PM",
-      "10:30 PM",
-      "11:00 PM",
-      "11:30 PM",
-      "12:00 AM",
-    ];
+    if (isLoading) {
+      return const Column(
+        children: [
+          SizedBox(height: 24),
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+
+    if (slots.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 20, color: AppColors.skyBlue),
+              const SizedBox(width: 8),
+              const Text(
+                'Available Time Slots',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No slots available for this date',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +353,7 @@ class TimeSlotGrid extends StatelessWidget {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
-          itemCount: times.length,
+          itemCount: slots.length,
           itemBuilder: (context, index) {
             final isSelected = selectedIndex == index;
 
@@ -371,7 +371,7 @@ class TimeSlotGrid extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  times[index],
+                  slots[index],
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

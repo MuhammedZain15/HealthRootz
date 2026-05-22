@@ -1,24 +1,25 @@
-/// Dashboard summary model — maps to GET /api/dashboard/summary.
+/// Dashboard stats — maps to GET /api/dashboard/stats.
 class DashboardSummary {
   final DashboardStats? stats;
-  final List<dynamic>? recentAlerts;
-  final List<dynamic>? recentVitals;
 
-  DashboardSummary({
-    this.stats,
-    this.recentAlerts,
-    this.recentVitals,
-  });
+  DashboardSummary({this.stats});
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] ?? json;
-    return DashboardSummary(
-      stats: data['stats'] != null
-          ? DashboardStats.fromJson(data['stats'])
-          : null,
-      recentAlerts: data['recentAlerts'] as List<dynamic>?,
-      recentVitals: data['recentVitals'] as List<dynamic>?,
-    );
+    final data = json['data'] is Map
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : Map<String, dynamic>.from(json);
+
+    DashboardStats? stats;
+    if (data['stats'] is Map) {
+      stats = DashboardStats.fromJson(
+        Map<String, dynamic>.from(data['stats'] as Map),
+      );
+    } else if (data.containsKey('totalPatients') ||
+        data.containsKey('totalAlerts')) {
+      stats = DashboardStats.fromJson(data);
+    }
+
+    return DashboardSummary(stats: stats);
   }
 }
 
@@ -36,11 +37,17 @@ class DashboardStats {
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
+    int? parseInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      return int.tryParse(value.toString());
+    }
+
     return DashboardStats(
-      totalPatients: json['totalPatients'] as int?,
-      totalAlerts: json['totalAlerts'] as int?,
-      totalAppointments: json['totalAppointments'] as int?,
-      totalReports: json['totalReports'] as int?,
+      totalPatients: parseInt(json['totalPatients']),
+      totalAlerts: parseInt(json['totalAlerts']),
+      totalAppointments: parseInt(json['totalAppointments']),
+      totalReports: parseInt(json['totalReports']),
     );
   }
 }
