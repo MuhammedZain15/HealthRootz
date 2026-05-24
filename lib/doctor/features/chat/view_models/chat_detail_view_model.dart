@@ -1,25 +1,158 @@
-import 'package:flutter/material.dart';
-import '../models/chat_model.dart';
+// lib/doctor/features/chat/view_models/chat_detail_view_model.dart
+import 'dart:async';
 
-class ChatDetailViewModel extends ChangeNotifier {
-  final List<ChatMessage> _messages = [
-    ChatMessage(id: '1', text: 'Good morning, Doctor. How are my latest test results?', isMe: false, time: '10:15 AM'),
-    ChatMessage(id: '2', text: 'Good morning, John! Your results look very promising. Your heart rate has stabilized nicely.', isMe: true, time: '10:21 AM'),
-    ChatMessage(id: '3', text: 'I\'m attaching your detailed report for your records.', isMe: true, time: '10:21 AM'),
-    ChatMessage(id: '4', text: 'Thank you for the update, Doctor.', isMe: false, time: '10:30 AM'),
-  ];
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/doctor/features/chat/data/datasources/chat_remote_data_source.dart';
+import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/delete_message_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/get_messages_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/mark_as_read_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/send_message_usecase.dart';
+import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
+
+abstract class ChatDetailState {
+  const ChatDetailState();
+}
+
+class ChatDetailInitial extends ChatDetailState {
+  const ChatDetailInitial();
+}
+
+class ChatDetailLoading extends ChatDetailState {
+  const ChatDetailLoading();
+}
+
+class ChatDetailLoaded extends ChatDetailState {
+  final List<ChatMessage> messages;
+  const ChatDetailLoaded(this.messages);
+}
+
+class ChatDetailSending extends ChatDetailState {
+  const ChatDetailSending();
+}
+
+class ChatDetailError extends ChatDetailState {
+  final String message;
+  const ChatDetailError(this.message);
+}
+
+class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
+  ChatDetailCubit({
+    GetMessagesUseCase? getMessagesUseCase,
+    SendMessageUseCase? sendMessageUseCase,
+    MarkAsReadUseCase? markAsReadUseCase,
+    DeleteMessageUseCase? deleteMessageUseCase,
+  })  : _getMessagesUseCase =
+            getMessagesUseCase ??
+            GetMessagesUseCase(
+              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+            ),
+        _sendMessageUseCase =
+            sendMessageUseCase ??
+            SendMessageUseCase(
+              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+            ),
+        _markAsReadUseCase =
+            markAsReadUseCase ??
+            MarkAsReadUseCase(
+              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+            ),
+        _deleteMessageUseCase =
+            deleteMessageUseCase ??
+            DeleteMessageUseCase(
+              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+            ),
+        super(const ChatDetailInitial()) {
+    _sub = stream.listen((_) => _notifyListeners());
+  }
+
+  final GetMessagesUseCase _getMessagesUseCase;
+  final SendMessageUseCase _sendMessageUseCase;
+  final MarkAsReadUseCase _markAsReadUseCase;
+  final DeleteMessageUseCase _deleteMessageUseCase;
+  final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
+  late final StreamSubscription<ChatDetailState> _sub;
+
+  String? _patientId;
+  List<ChatMessage> _messages = const <ChatMessage>[];
 
   List<ChatMessage> get messages => _messages;
 
-  void sendMessage(String text) {
-    if (text.trim().isEmpty) return;
-    final newMessage = ChatMessage(
-      id: DateTime.now().toString(),
-      text: text,
-      isMe: true,
-      time: 'Now', // Formatting logic can be added
+  Future<void> loadMessages(String patientId) async {
+    _patientId = patientId;
+    emit(const ChatDetailLoading());
+    final result = await _getMessagesUseCase(patientId);
+    result.fold(
+      (failure) => emit(ChatDetailError(failure.message)),
+      (messages) {
+        _messages = messages;
+        emit(ChatDetailLoaded(messages));
+      },
     );
-    _messages.add(newMessage);
-    notifyListeners();
   }
+
+  Future<void> sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+    final patientId = _patientId;
+    if (patientId == null || patientId.isEmpty) {
+      emit(const ChatDetailError('Patient id is missing.'));
+      return;
+    }
+
+    emit(const ChatDetailSending());
+    final result = await _sendMessageUseCase(patientId: patientId, text: text);
+    result.fold(
+      (failure) => emit(ChatDetailError(failure.message)),
+      (message) {
+        _messages = <ChatMessage>[..._messages, message];
+        emit(ChatDetailLoaded(_messages));
+      },
+    );
+  }
+
+  Future<void> markAsRead(String messageId) async {
+    final result = await _markAsReadUseCase(messageId);
+    result.fold(
+      (failure) => emit(ChatDetailError(failure.message)),
+      (_) {},
+    );
+  }
+
+  Future<void> deleteMessage(String messageId) async {
+    final result = await _deleteMessageUseCase(messageId);
+    result.fold(
+      (failure) => emit(ChatDetailError(failure.message)),
+      (_) {
+        _messages = _messages.where((m) => m.id != messageId).toList(growable: false);
+        emit(ChatDetailLoaded(_messages));
+      },
+    );
+  }
+
+  @override
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners() {
+    for (final listener in List<VoidCallback>.from(_listeners)) {
+      listener();
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _sub.cancel();
+    return super.close();
+  }
+}
+
+class ChatDetailViewModel extends ChatDetailCubit {
+  ChatDetailViewModel() : super();
 }
