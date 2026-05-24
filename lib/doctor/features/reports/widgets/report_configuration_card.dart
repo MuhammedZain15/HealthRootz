@@ -61,7 +61,7 @@ class ReportConfigurationCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: selectedPatient?.id,
+            initialValue: selectedPatient?.id,
             hint: const Text('Choose a patient...'),
             decoration: _inputDecoration(),
             items: patients

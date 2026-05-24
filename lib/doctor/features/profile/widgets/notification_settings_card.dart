@@ -82,7 +82,7 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF3B82F6),
+          activeThumbColor: const Color(0xFF3B82F6),
         ),
       ],
     );
