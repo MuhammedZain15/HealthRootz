@@ -8,6 +8,7 @@ import 'package:grad_project/doctor/features/chat/data/repositories/chat_reposit
 import 'package:grad_project/doctor/features/chat/domain/usecases/delete_message_usecase.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/mark_as_read_usecase.dart';
+import 'package:grad_project/doctor/features/chat/doctor_chat_session.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/send_message_usecase.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
 
@@ -64,7 +65,11 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
               ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
             ),
         super(const ChatDetailInitial()) {
-    _sub = stream.listen((_) => _notifyListeners());
+    _sub = stream.listen(_onStateChanged);
+    final patientId = DoctorChatSession.activePatientId;
+    if (patientId != null && patientId.isNotEmpty) {
+      unawaited(loadMessages(patientId));
+    }
   }
 
   final GetMessagesUseCase _getMessagesUseCase;
@@ -94,21 +99,37 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
 
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-    final patientId = _patientId;
+    final patientId = _patientId ?? DoctorChatSession.activePatientId;
     if (patientId == null || patientId.isEmpty) {
       emit(const ChatDetailError('Patient id is missing.'));
       return;
     }
+    _patientId = patientId;
 
     emit(const ChatDetailSending());
     final result = await _sendMessageUseCase(patientId: patientId, text: text);
+    await result.fold(
+      (failure) async => emit(ChatDetailError(failure.message)),
+      (_) async => await _refreshMessages(patientId),
+    );
+  }
+
+  Future<void> _refreshMessages(String patientId) async {
+    final result = await _getMessagesUseCase(patientId);
     result.fold(
       (failure) => emit(ChatDetailError(failure.message)),
-      (message) {
-        _messages = <ChatMessage>[..._messages, message];
-        emit(ChatDetailLoaded(_messages));
+      (messages) {
+        _messages = messages;
+        emit(ChatDetailLoaded(messages));
       },
     );
+  }
+
+  void _onStateChanged(ChatDetailState state) {
+    if (state is ChatDetailLoaded) {
+      _messages = state.messages;
+    }
+    _notifyListeners();
   }
 
   Future<void> markAsRead(String messageId) async {

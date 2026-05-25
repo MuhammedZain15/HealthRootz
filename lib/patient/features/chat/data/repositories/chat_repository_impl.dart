@@ -10,13 +10,21 @@ class ChatRepositoryImpl implements ChatRepository {
 
   final ChatRemoteDataSource _remoteDataSource;
 
+  static String _dioMessage(DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map && data['message'] != null) {
+      return data['message'].toString();
+    }
+    return e.message ?? fallback;
+  }
+
   @override
   Future<Either<Failure, List<ChatMessage>>> getMessages(String patientId) async {
     try {
       final messages = await _remoteDataSource.getMessages(patientId);
       return Right(messages);
     } on DioException catch (e) {
-      return Left(Failure(e.message ?? 'Failed to load messages.'));
+      return Left(Failure(_dioMessage(e, 'Failed to load messages.')));
     } catch (_) {
       return const Left(Failure('Failed to load messages.'));
     }
@@ -34,7 +42,7 @@ class ChatRepositoryImpl implements ChatRepository {
       );
       return Right(message);
     } on DioException catch (e) {
-      return Left(Failure(e.message ?? 'Failed to send message.'));
+      return Left(Failure(_dioMessage(e, 'Failed to send message.')));
     } catch (_) {
       return const Left(Failure('Failed to send message.'));
     }
@@ -46,7 +54,7 @@ class ChatRepositoryImpl implements ChatRepository {
       await _remoteDataSource.markAsRead(messageId);
       return const Right(null);
     } on DioException catch (e) {
-      return Left(Failure(e.message ?? 'Failed to mark message as read.'));
+      return Left(Failure(_dioMessage(e, 'Failed to mark message as read.')));
     } catch (_) {
       return const Left(Failure('Failed to mark message as read.'));
     }
@@ -58,7 +66,7 @@ class ChatRepositoryImpl implements ChatRepository {
       await _remoteDataSource.deleteMessage(messageId);
       return const Right(null);
     } on DioException catch (e) {
-      return Left(Failure(e.message ?? 'Failed to delete message.'));
+      return Left(Failure(_dioMessage(e, 'Failed to delete message.')));
     } catch (_) {
       return const Left(Failure('Failed to delete message.'));
     }

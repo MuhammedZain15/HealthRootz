@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'doctor_chat_session.dart';
 import 'models/chat_model.dart';
 import 'view_models/chat_list_view_model.dart';
 import 'views/chat_detail_page.dart';
@@ -16,6 +17,7 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
   final _vm = ChatListViewModel();
 
   void _openChat(BuildContext context, ChatUser user) {
+    DoctorChatSession.activePatientId = user.id;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ChatDetailPage(user: user)),

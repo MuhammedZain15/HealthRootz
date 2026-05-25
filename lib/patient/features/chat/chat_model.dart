@@ -19,11 +19,18 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, Object?> json) {
+    final sender = json['sender']?.toString();
+    final isSenderFromRole = sender == 'patient';
     return ChatMessage(
       id: (json['id'] ?? json['_id'])?.toString(),
       text: (json['text'] ?? '').toString(),
-      isSender: json['isSender'] as bool? ?? json['isMe'] as bool? ?? false,
-      timestamp: _parseTimestamp(json['timestamp'] ?? json['time']),
+      isSender:
+          json['isSender'] as bool? ??
+          json['isMe'] as bool? ??
+          isSenderFromRole,
+      timestamp: _parseTimestamp(
+        json['timestamp'] ?? json['time'] ?? json['createdAt'],
+      ),
       doctorName: json['doctorName']?.toString(),
       patientId: json['patientId']?.toString(),
       isRead: json['isRead'] as bool? ?? false,

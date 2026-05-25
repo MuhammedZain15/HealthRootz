@@ -186,17 +186,13 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       return;
     }
 
-    emit(ChatSending());
     final result = await _sendMessageUseCase(patientId: patientId, text: text);
     result.fold(
-      (failure) => emit(ChatError(failure.message)),
-      (message) {
-        if (_messages.isNotEmpty) {
-          _messages.removeLast();
-        }
-        _messages.add(message);
+      (failure) {
+        emit(ChatError(failure.message));
         _emitLoaded();
       },
+      (_) => unawaited(_loadDoctorMessages()),
     );
   }
 
