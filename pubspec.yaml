@@ -43,6 +43,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   animated_bottom_navigation_bar: ^1.4.0
   dio: ^5.9.2
+  dartz: ^0.10.1
   shared_preferences: ^2.5.5
 
 dev_dependencies:

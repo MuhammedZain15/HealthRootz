@@ -36,7 +36,7 @@ class AlertService {
           'patientId': patientId,
           'message': message,
           'type': type,
-          if (description != null) 'description': description,
+          'description': ?description,
         },
       );
       return ApiResponse(
