@@ -8,11 +8,29 @@ class Failure {
 }
 
 abstract class ChatRepository {
-  Future<Either<Failure, List<ChatMessage>>> getMessages(String patientId);
-  Future<Either<Failure, ChatMessage>> sendMessage({
+  Future<Either<Failure, String>> resolveDoctorId(String patientId);
+
+  Stream<Either<Failure, List<ChatMessage>>> watchMessages({
+    required String doctorId,
     required String patientId,
+  });
+
+  Future<Either<Failure, ChatMessage>> sendMessage({
+    required String doctorId,
+    required String patientId,
+    required String senderId,
     required String text,
   });
-  Future<Either<Failure, void>> markAsRead(String messageId);
-  Future<Either<Failure, void>> deleteMessage(String messageId);
+
+  Future<Either<Failure, void>> markAsRead({
+    required String doctorId,
+    required String patientId,
+    required String messageId,
+  });
+
+  Future<Either<Failure, void>> deleteMessage({
+    required String doctorId,
+    required String patientId,
+    required String messageId,
+  });
 }

@@ -3,9 +3,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:grad_project/doctor/features/chat/data/datasources/chat_remote_data_source.dart';
+import 'package:grad_project/core/network/token_storage.dart';
+import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
-import 'package:grad_project/doctor/features/chat/domain/usecases/get_messages_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/watch_chat_list_usecase.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
 
 abstract class ChatListState {
@@ -32,61 +33,50 @@ class ChatListError extends ChatListState {
 }
 
 class ChatListCubit extends Cubit<ChatListState> implements Listenable {
-  ChatListCubit({GetMessagesUseCase? getMessagesUseCase})
-      : _getMessagesUseCase =
-            getMessagesUseCase ??
-            GetMessagesUseCase(
-              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+  ChatListCubit({WatchChatListUseCase? watchChatListUseCase})
+      : _watchChatListUseCase =
+            watchChatListUseCase ??
+            WatchChatListUseCase(
+              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
             ),
         super(const ChatListInitial()) {
     _sub = stream.listen((_) => _notifyListeners());
-    unawaited(loadChats());
+    unawaited(_startChatListStream());
   }
 
-  final GetMessagesUseCase _getMessagesUseCase;
+  final WatchChatListUseCase _watchChatListUseCase;
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
   late final StreamSubscription<ChatListState> _sub;
+  StreamSubscription<dynamic>? _chatListSub;
 
   List<ChatUser> _chats = const <ChatUser>[];
   List<ChatUser> _filtered = const <ChatUser>[];
 
   List<ChatUser> get chats => _filtered;
 
-  Future<void> loadChats() async {
+  Future<void> _startChatListStream() async {
+    final doctorId = await TokenStorage.getUserId();
+    if (doctorId == null || doctorId.isEmpty) {
+      emit(const ChatListError('Doctor id is missing.'));
+      return;
+    }
+
     emit(const ChatListLoading());
+    await _chatListSub?.cancel();
+    _chatListSub = _watchChatListUseCase(doctorId: doctorId).listen((result) {
+      result.fold(
+        (failure) => emit(ChatListError(failure.message)),
+        (chats) {
+          _chats = chats;
+          _filtered = chats;
+          emit(ChatListLoaded(_chats, _filtered));
+        },
+      );
+    });
+  }
 
-    final result = await _getMessagesUseCase('all');
-    result.fold(
-      (failure) => emit(ChatListError(failure.message)),
-      (messages) {
-        final Map<String, ChatMessage> latestByPatient = <String, ChatMessage>{};
-        for (final message in messages) {
-          final patientId = message.patientId;
-          if (patientId == null || patientId.isEmpty) continue;
-          final existing = latestByPatient[patientId];
-          if (existing == null) {
-            latestByPatient[patientId] = message;
-          } else {
-            latestByPatient[patientId] = message;
-          }
-        }
-
-        _chats =
-            latestByPatient.entries.map((entry) {
-              final msg = entry.value;
-              return ChatUser(
-                id: entry.key,
-                name: entry.key,
-                lastMessage: msg.text,
-                time: msg.time,
-                unreadCount: msg.isRead ? 0 : 1,
-                isActive: true,
-              );
-            }).toList(growable: false);
-        _filtered = _chats;
-        emit(ChatListLoaded(_chats, _filtered));
-      },
-    );
+  Future<void> loadChats() async {
+    await _startChatListStream();
   }
 
   void filterChats(String query) {
@@ -122,6 +112,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 
   @override
   Future<void> close() async {
+    await _chatListSub?.cancel();
     await _sub.cancel();
     return super.close();
   }
