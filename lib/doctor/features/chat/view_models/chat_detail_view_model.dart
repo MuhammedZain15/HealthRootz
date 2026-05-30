@@ -3,7 +3,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:grad_project/doctor/features/chat/data/datasources/chat_remote_data_source.dart';
+import 'package:grad_project/core/network/token_storage.dart';
+import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/delete_message_usecase.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/get_messages_usecase.dart';
@@ -47,22 +48,22 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   })  : _getMessagesUseCase =
             getMessagesUseCase ??
             GetMessagesUseCase(
-              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
             ),
         _sendMessageUseCase =
             sendMessageUseCase ??
             SendMessageUseCase(
-              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
             ),
         _markAsReadUseCase =
             markAsReadUseCase ??
             MarkAsReadUseCase(
-              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
             ),
         _deleteMessageUseCase =
             deleteMessageUseCase ??
             DeleteMessageUseCase(
-              ChatRepositoryImpl(ChatRemoteDataSourceImpl()),
+              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
             ),
         super(const ChatDetailInitial()) {
     _sub = stream.listen(_onStateChanged);
@@ -78,50 +79,64 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   final DeleteMessageUseCase _deleteMessageUseCase;
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
   late final StreamSubscription<ChatDetailState> _sub;
+  StreamSubscription<dynamic>? _messagesSub;
 
   String? _patientId;
+  String? _doctorId;
   List<ChatMessage> _messages = const <ChatMessage>[];
 
   List<ChatMessage> get messages => _messages;
 
   Future<void> loadMessages(String patientId) async {
     _patientId = patientId;
+    final doctorId = await TokenStorage.getUserId();
+    if (doctorId == null || doctorId.isEmpty) {
+      emit(const ChatDetailError('Doctor id is missing.'));
+      return;
+    }
+    _doctorId = doctorId;
+
+    await _messagesSub?.cancel();
     emit(const ChatDetailLoading());
-    final result = await _getMessagesUseCase(patientId);
-    result.fold(
-      (failure) => emit(ChatDetailError(failure.message)),
-      (messages) {
-        _messages = messages;
-        emit(ChatDetailLoaded(messages));
-      },
-    );
+
+    _messagesSub = _getMessagesUseCase(
+      doctorId: doctorId,
+      patientId: patientId,
+    ).listen((result) {
+      result.fold(
+        (failure) => emit(ChatDetailError(failure.message)),
+        (messages) {
+          _messages = messages;
+          emit(ChatDetailLoaded(messages));
+        },
+      );
+    });
   }
 
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
     final patientId = _patientId ?? DoctorChatSession.activePatientId;
-    if (patientId == null || patientId.isEmpty) {
-      emit(const ChatDetailError('Patient id is missing.'));
+    final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (patientId == null ||
+        patientId.isEmpty ||
+        doctorId == null ||
+        doctorId.isEmpty) {
+      emit(const ChatDetailError('Chat participants are missing.'));
       return;
     }
     _patientId = patientId;
+    _doctorId = doctorId;
 
     emit(const ChatDetailSending());
-    final result = await _sendMessageUseCase(patientId: patientId, text: text);
-    await result.fold(
-      (failure) async => emit(ChatDetailError(failure.message)),
-      (_) async => await _refreshMessages(patientId),
+    final result = await _sendMessageUseCase(
+      doctorId: doctorId,
+      patientId: patientId,
+      senderId: doctorId,
+      text: text,
     );
-  }
-
-  Future<void> _refreshMessages(String patientId) async {
-    final result = await _getMessagesUseCase(patientId);
     result.fold(
       (failure) => emit(ChatDetailError(failure.message)),
-      (messages) {
-        _messages = messages;
-        emit(ChatDetailLoaded(messages));
-      },
+      (_) {},
     );
   }
 
@@ -133,7 +148,15 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   }
 
   Future<void> markAsRead(String messageId) async {
-    final result = await _markAsReadUseCase(messageId);
+    final patientId = _patientId;
+    final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (patientId == null || doctorId == null) return;
+
+    final result = await _markAsReadUseCase(
+      doctorId: doctorId,
+      patientId: patientId,
+      messageId: messageId,
+    );
     result.fold(
       (failure) => emit(ChatDetailError(failure.message)),
       (_) {},
@@ -141,13 +164,18 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   }
 
   Future<void> deleteMessage(String messageId) async {
-    final result = await _deleteMessageUseCase(messageId);
+    final patientId = _patientId;
+    final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (patientId == null || doctorId == null) return;
+
+    final result = await _deleteMessageUseCase(
+      doctorId: doctorId,
+      patientId: patientId,
+      messageId: messageId,
+    );
     result.fold(
       (failure) => emit(ChatDetailError(failure.message)),
-      (_) {
-        _messages = _messages.where((m) => m.id != messageId).toList(growable: false);
-        emit(ChatDetailLoaded(_messages));
-      },
+      (_) {},
     );
   }
 
@@ -169,6 +197,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
 
   @override
   Future<void> close() async {
+    await _messagesSub?.cancel();
     await _sub.cancel();
     return super.close();
   }

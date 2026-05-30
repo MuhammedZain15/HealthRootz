@@ -7,7 +7,15 @@ class DeleteMessageUseCase {
 
   final ChatRepository _repository;
 
-  Future<Either<Failure, void>> call(String messageId) {
-    return _repository.deleteMessage(messageId);
+  Future<Either<Failure, void>> call({
+    required String doctorId,
+    required String patientId,
+    required String messageId,
+  }) {
+    return _repository.deleteMessage(
+      doctorId: doctorId,
+      patientId: patientId,
+      messageId: messageId,
+    );
   }
 }

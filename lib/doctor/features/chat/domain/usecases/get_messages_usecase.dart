@@ -8,7 +8,13 @@ class GetMessagesUseCase {
 
   final ChatRepository _repository;
 
-  Future<Either<Failure, List<ChatMessage>>> call(String patientId) {
-    return _repository.getMessages(patientId);
+  Stream<Either<Failure, List<ChatMessage>>> call({
+    required String doctorId,
+    required String patientId,
+  }) {
+    return _repository.watchMessages(
+      doctorId: doctorId,
+      patientId: patientId,
+    );
   }
 }
