@@ -1,16 +1,15 @@
 // lib/core/network/api_config.dart
-/// Local backend connection settings for physical device / emulator testing.
+/// Local backend connection settings for a real phone on the same Wi-Fi network.
 ///
-/// - Use your PC's Wi‑Fi IPv4 address (run `ipconfig` on Windows, `ifconfig` on Mac/Linux).
-/// - Phone and PC must be on the same Wi‑Fi network.
-/// - Do not use `localhost` or `127.0.0.1` on a physical device.
+/// The phone cannot use localhost for your PC. Keep this host set to the
+/// backend machine's LAN IPv4 address, and keep [port] in sync with server.js.
 class ApiConfig {
   ApiConfig._();
 
-  /// Your machine's LAN IP (update when your network changes).
+  /// Backend machine LAN IP.
   static const String host = '192.168.1.13';
 
-  /// Backend port (must match your server, e.g. 5000 or 8000).
+  /// Backend port. Must match PORT in the Node.js .env/server.js.
   static const int port = 5000;
 
   /// API path prefix on the server.
