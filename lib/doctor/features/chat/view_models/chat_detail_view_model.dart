@@ -45,27 +45,25 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
     SendMessageUseCase? sendMessageUseCase,
     MarkAsReadUseCase? markAsReadUseCase,
     DeleteMessageUseCase? deleteMessageUseCase,
-  })  : _getMessagesUseCase =
-            getMessagesUseCase ??
-            GetMessagesUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _sendMessageUseCase =
-            sendMessageUseCase ??
-            SendMessageUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _markAsReadUseCase =
-            markAsReadUseCase ??
-            MarkAsReadUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _deleteMessageUseCase =
-            deleteMessageUseCase ??
-            DeleteMessageUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        super(const ChatDetailInitial()) {
+  }) : _getMessagesUseCase =
+           getMessagesUseCase ??
+           GetMessagesUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _sendMessageUseCase =
+           sendMessageUseCase ??
+           SendMessageUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _markAsReadUseCase =
+           markAsReadUseCase ??
+           MarkAsReadUseCase(ChatRepositoryImpl(ChatFirestoreDataSourceImpl())),
+       _deleteMessageUseCase =
+           deleteMessageUseCase ??
+           DeleteMessageUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       super(const ChatDetailInitial()) {
     _sub = stream.listen(_onStateChanged);
     final patientId = DoctorChatSession.activePatientId;
     if (patientId != null && patientId.isNotEmpty) {
@@ -99,18 +97,16 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
     await _messagesSub?.cancel();
     emit(const ChatDetailLoading());
 
-    _messagesSub = _getMessagesUseCase(
-      doctorId: doctorId,
-      patientId: patientId,
-    ).listen((result) {
-      result.fold(
-        (failure) => emit(ChatDetailError(failure.message)),
-        (messages) {
-          _messages = messages;
-          emit(ChatDetailLoaded(messages));
-        },
-      );
-    });
+    _messagesSub = _getMessagesUseCase(doctorId: doctorId, patientId: patientId)
+        .listen((result) {
+          result.fold((failure) => emit(ChatDetailError(failure.message)), (
+            messages,
+          ) {
+            _messages = messages;
+            emit(ChatDetailLoaded(messages));
+            unawaited(_markIncomingMessagesAsRead(messages));
+          });
+        });
   }
 
   Future<void> sendMessage(String text) async {
@@ -134,10 +130,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       senderId: doctorId,
       text: text,
     );
-    result.fold(
-      (failure) => emit(ChatDetailError(failure.message)),
-      (_) {},
-    );
+    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
   }
 
   void _onStateChanged(ChatDetailState state) {
@@ -145,6 +138,14 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       _messages = state.messages;
     }
     _notifyListeners();
+  }
+
+  Future<void> _markIncomingMessagesAsRead(List<ChatMessage> messages) async {
+    for (final message in messages) {
+      if (message.id.isEmpty) continue;
+      if (message.isMe || message.isRead) continue;
+      await markAsRead(message.id);
+    }
   }
 
   Future<void> markAsRead(String messageId) async {
@@ -157,10 +158,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       patientId: patientId,
       messageId: messageId,
     );
-    result.fold(
-      (failure) => emit(ChatDetailError(failure.message)),
-      (_) {},
-    );
+    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
   }
 
   Future<void> deleteMessage(String messageId) async {
@@ -173,10 +171,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       patientId: patientId,
       messageId: messageId,
     );
-    result.fold(
-      (failure) => emit(ChatDetailError(failure.message)),
-      (_) {},
-    );
+    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
   }
 
   @override

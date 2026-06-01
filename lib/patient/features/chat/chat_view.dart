@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/patient/features/ai_chat/ai_sessions_screen.dart';
 import 'chat_view_model.dart';
 import 'chat_widgets.dart';
 
 class ChatView extends StatefulWidget {
   final bool isDoctorChat;
+  final String? sessionId;
 
-  const ChatView({super.key, this.isDoctorChat = true});
+  const ChatView({super.key, this.isDoctorChat = true, this.sessionId});
 
   @override
   State<ChatView> createState() => _ChatViewState();
@@ -18,18 +22,46 @@ class _ChatViewState extends State<ChatView> {
   @override
   void initState() {
     super.initState();
-    _viewModel = ChatViewModel(isDoctorChat: widget.isDoctorChat);
+    _viewModel = ChatViewModel(isDoctorChat: widget.isDoctorChat, sessionId: widget.sessionId);
     _viewModel.addListener(_onViewModelChanged);
+    _viewModel.setOnEmergency(() {
+      _showEmergencyDialog();
+    });
+    if (!widget.isDoctorChat) {
+      unawaited(_viewModel.initAISession(widget.sessionId));
+    }
   }
 
   @override
   void dispose() {
     _viewModel.removeListener(_onViewModelChanged);
-    _viewModel.textController.dispose();
+    _viewModel.close();
     super.dispose();
   }
 
   void _onViewModelChanged() => setState(() {});
+
+  void _showEmergencyDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('⚠️ Emergency Alert'),
+          content: const Text(
+            'The AI assistant has detected an emergency situation. '
+            'Please call an ambulance immediately or contact emergency services.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Color get _accentColor =>
       _viewModel.isDoctorChat ? AppColors.skyBlue : AppColors.purple;
@@ -65,6 +97,28 @@ class _ChatViewState extends State<ChatView> {
         elevation: 0,
         toolbarHeight: 80,
         automaticallyImplyLeading: false,
+        actions: !_viewModel.isDoctorChat
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AiSessionsScreen(),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.history,
+                      color: AppColors.purple,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: Column(
         children: [
@@ -114,6 +168,20 @@ class _ChatViewState extends State<ChatView> {
                     message: _viewModel.messages[index],
                     maxWidth: size.width > 900 ? 600 : size.width * 0.75,
                     accentColor: _accentColor,
+                    onDelete: () {
+                      final message = _viewModel.messages[index];
+                      if (message.id != null) {
+                        _viewModel.deleteMessage(message.id!);
+                      }
+                    },
+                    onForward: (destination) {
+                      final messageText = _viewModel.messages[index].text;
+                      if (destination == 'doctor') {
+                        _viewModel.forwardToDoctor(messageText);
+                      } else if (destination == 'ai') {
+                        _viewModel.forwardToAI(messageText);
+                      }
+                    },
                   ),
                 ),
               ),

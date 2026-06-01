@@ -1,5 +1,6 @@
 // lib/patient/features/chat/data/datasources/chat_firestore_data_source.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:grad_project/core/services/auth_service.dart';
 import 'package:grad_project/patient/features/chat/chat_model.dart';
 import 'package:grad_project/patient/features/chat/data/firebase/chat_firebase.dart';
 import 'package:grad_project/patient/features/chat/data/utils/chat_id_helper.dart';
@@ -36,12 +37,25 @@ abstract class ChatFirestoreDataSource {
 
 class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   ChatFirestoreDataSourceImpl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestoreOverride = firestore;
 
-  final FirebaseFirestore _firestore;
+  static const String _chatsCollection = 'chats';
+  static const String _doctorIdPrefsKey = 'chat_doctor_id';
+  static const String _defaultDoctorId = 'dr_sarah_johnson';
+  static const String _messageField = 'message';
+  static const String _senderIdField = 'senderId';
+  static const String _timestampField = 'timestamp';
+  static const String _chatIdField = 'chatId';
+  static const String _doctorIdField = 'doctorId';
+  static const String _patientIdField = 'patientId';
+  static const String _patientNameField = 'patientName';
+
+  final FirebaseFirestore? _firestoreOverride;
+  final AuthService _authService = AuthService();
   bool _initialized = false;
 
-  static const String _doctorIdPrefsKey = 'chat_doctor_id';
+  FirebaseFirestore get _firestore =>
+      _firestoreOverride ?? FirebaseFirestore.instance;
 
   Future<void> _ensureReady() async {
     if (_initialized) return;
@@ -52,11 +66,8 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   String _chatId(String doctorId, String patientId) =>
       ChatIdHelper.build(doctorId, patientId);
 
-  CollectionReference<Map<String, dynamic>> _messagesRef(String chatId) =>
-      _firestore.collection('chats').doc(chatId).collection('messages');
-
-  DocumentReference<Map<String, dynamic>> _chatRef(String chatId) =>
-      _firestore.collection('chats').doc(chatId);
+  CollectionReference<Map<String, dynamic>> get _chatsRef =>
+      _firestore.collection(_chatsCollection);
 
   ChatMessage _mapMessage(
     DocumentSnapshot<Map<String, dynamic>> doc,
@@ -64,14 +75,15 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     String patientId,
   ) {
     final data = doc.data() ?? <String, dynamic>{};
-    final senderId = data['senderId']?.toString() ?? '';
-    final timestamp = data['timestamp'];
-    final DateTime dateTime =
-        timestamp is Timestamp ? timestamp.toDate() : DateTime.now();
+    final senderId = data[_senderIdField]?.toString() ?? '';
+    final timestamp = data[_timestampField];
+    final DateTime dateTime = timestamp is Timestamp
+        ? timestamp.toDate()
+        : DateTime.now();
     final isSender = senderId == patientId;
     return ChatMessage(
       id: doc.id,
-      text: data['text']?.toString() ?? '',
+      text: (data[_messageField] ?? data['text'] ?? '').toString(),
       isSender: isSender,
       timestamp: dateTime,
       doctorName: isSender ? null : 'Dr. Sarah Johnson',
@@ -95,16 +107,25 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
       return stored;
     }
 
-    final snapshot = await _firestore.collection('chats').get();
+    final snapshot = await _chatsRef
+        .where(_patientIdField, isEqualTo: patientId)
+        .limit(1)
+        .get();
     for (final doc in snapshot.docs) {
-      final doctorId = ChatIdHelper.doctorIdFromChatId(doc.id, patientId);
+      final data = doc.data();
+      final doctorId =
+          data[_doctorIdField]?.toString() ??
+          ChatIdHelper.doctorIdFromChatId(doc.id, patientId);
       if (doctorId != null) {
         PatientChatSession.activeDoctorId = doctorId;
         await prefs.setString(_doctorIdPrefsKey, doctorId);
         return doctorId;
       }
     }
-    return null;
+
+    PatientChatSession.activeDoctorId = _defaultDoctorId;
+    await prefs.setString(_doctorIdPrefsKey, _defaultDoctorId);
+    return _defaultDoctorId;
   }
 
   @override
@@ -113,15 +134,15 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     required String patientId,
   }) async* {
     await _ensureReady();
-    final chatId = _chatId(doctorId, patientId);
-    yield* _messagesRef(chatId)
-        .orderBy('timestamp', descending: false)
+    yield* _chatsRef
+        .where(_patientIdField, isEqualTo: patientId)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final docs = snapshot.docs.toList()..sort(_sortByTimestamp);
+          return docs
               .map((doc) => _mapMessage(doc, doctorId, patientId))
-              .toList(growable: false),
-        );
+              .toList(growable: false);
+        });
   }
 
   @override
@@ -137,24 +158,22 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     await prefs.setString(_doctorIdPrefsKey, doctorId);
 
     final chatId = _chatId(doctorId, patientId);
-    final messageRef = _messagesRef(chatId).doc();
+    final messageRef = _chatsRef.doc();
+    final patientName = await _resolvePatientName(patientId);
     final payload = <String, dynamic>{
-      'senderId': senderId,
-      'text': text,
-      'timestamp': FieldValue.serverTimestamp(),
+      _messageField: text,
+      _senderIdField: senderId,
+      _timestampField: FieldValue.serverTimestamp(),
+      _chatIdField: chatId,
+      _doctorIdField: doctorId,
+      _patientIdField: patientId,
       'isRead': false,
     };
+    if (patientName != null) {
+      payload[_patientNameField] = patientName;
+    }
 
     await messageRef.set(payload);
-    await _chatRef(chatId).set(
-      <String, dynamic>{
-        'doctorId': doctorId,
-        'patientId': patientId,
-        'lastMessage': text,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
 
     final snapshot = await messageRef.get();
     return _mapMessage(snapshot, doctorId, patientId);
@@ -167,10 +186,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     required String messageId,
   }) async {
     await _ensureReady();
-    final chatId = _chatId(doctorId, patientId);
-    await _messagesRef(chatId).doc(messageId).update(<String, dynamic>{
-      'isRead': true,
-    });
+    await _chatsRef.doc(messageId).update(<String, dynamic>{'isRead': true});
   }
 
   @override
@@ -180,7 +196,92 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     required String messageId,
   }) async {
     await _ensureReady();
-    final chatId = _chatId(doctorId, patientId);
-    await _messagesRef(chatId).doc(messageId).delete();
+    await _chatsRef.doc(messageId).delete();
+  }
+
+  int _sortByTimestamp(
+    QueryDocumentSnapshot<Map<String, dynamic>> a,
+    QueryDocumentSnapshot<Map<String, dynamic>> b,
+  ) {
+    return _timestampValue(
+      a.data()[_timestampField],
+    ).compareTo(_timestampValue(b.data()[_timestampField]));
+  }
+
+  int _timestampValue(Object? value) {
+    if (value is Timestamp) return value.millisecondsSinceEpoch;
+    if (value is DateTime) return value.millisecondsSinceEpoch;
+    return DateTime.now().millisecondsSinceEpoch;
+  }
+
+  Future<String?> _resolvePatientName(String patientId) async {
+    for (final collection in const <String>[
+      'users',
+      'patients',
+      'patient_profiles',
+      'profiles',
+    ]) {
+      final byDocumentId = await _nameFromDocument(collection, patientId);
+      if (byDocumentId != null) return byDocumentId;
+
+      final byIdField = await _nameFromQuery(collection, 'id', patientId);
+      if (byIdField != null) return byIdField;
+
+      final byUnderscoreId = await _nameFromQuery(collection, '_id', patientId);
+      if (byUnderscoreId != null) return byUnderscoreId;
+
+      final byUserId = await _nameFromQuery(collection, 'userId', patientId);
+      if (byUserId != null) return byUserId;
+    }
+    return _nameFromProfile(patientId);
+  }
+
+  Future<String?> _nameFromDocument(
+    String collection,
+    String documentId,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection(collection)
+          .doc(documentId)
+          .get();
+      if (!snapshot.exists) return null;
+      return _extractName(snapshot.data());
+    } on FirebaseException {
+      return null;
+    }
+  }
+
+  Future<String?> _nameFromQuery(
+    String collection,
+    String field,
+    String value,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection(collection)
+          .where(field, isEqualTo: value)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isEmpty) return null;
+      return _extractName(snapshot.docs.first.data());
+    } on FirebaseException {
+      return null;
+    }
+  }
+
+  String? _extractName(Map<String, dynamic>? data) {
+    final raw = data?['name'] ?? data?['fullName'] ?? data?['displayName'];
+    final name = raw?.toString().trim();
+    return name == null || name.isEmpty ? null : name;
+  }
+
+  Future<String?> _nameFromProfile(String patientId) async {
+    final result = await _authService.getProfile();
+    final user = result.data;
+    if (!result.success || user == null) return null;
+    if (user.id != null && user.id != patientId) return null;
+    final name = user.name?.trim();
+    return name == null || name.isEmpty ? null : name;
   }
 }

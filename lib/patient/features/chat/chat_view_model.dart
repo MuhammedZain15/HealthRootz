@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/network/token_storage.dart';
+import 'package:grad_project/services/ai_service.dart';
+import 'package:grad_project/patient/features/ai_chat/data/ai_chat_datasource.dart';
 import 'package:grad_project/patient/features/chat/chat_model.dart';
 import 'package:grad_project/patient/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/patient/features/chat/data/repositories/chat_repository_impl.dart';
@@ -44,38 +46,38 @@ class ChatError extends ChatState {
 class ChatCubit extends Cubit<ChatState> implements Listenable {
   ChatCubit({
     required bool isDoctorChat,
+    String? sessionId,
     GetMessagesUseCase? getMessagesUseCase,
     SendMessageUseCase? sendMessageUseCase,
     MarkAsReadUseCase? markAsReadUseCase,
     DeleteMessageUseCase? deleteMessageUseCase,
     ResolveDoctorIdUseCase? resolveDoctorIdUseCase,
-  })  : _isDoctorChat = isDoctorChat,
-        _getMessagesUseCase =
-            getMessagesUseCase ??
-            GetMessagesUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _sendMessageUseCase =
-            sendMessageUseCase ??
-            SendMessageUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _markAsReadUseCase =
-            markAsReadUseCase ??
-            MarkAsReadUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _deleteMessageUseCase =
-            deleteMessageUseCase ??
-            DeleteMessageUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        _resolveDoctorIdUseCase =
-            resolveDoctorIdUseCase ??
-            ResolveDoctorIdUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        super(const ChatInitial()) {
+  }) : _isDoctorChat = isDoctorChat,
+       _sessionId = sessionId,
+       _getMessagesUseCase =
+           getMessagesUseCase ??
+           GetMessagesUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _sendMessageUseCase =
+           sendMessageUseCase ??
+           SendMessageUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _markAsReadUseCase =
+           markAsReadUseCase ??
+           MarkAsReadUseCase(ChatRepositoryImpl(ChatFirestoreDataSourceImpl())),
+       _deleteMessageUseCase =
+           deleteMessageUseCase ??
+           DeleteMessageUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _resolveDoctorIdUseCase =
+           resolveDoctorIdUseCase ??
+           ResolveDoctorIdUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       super(const ChatInitial()) {
     _sub = stream.listen(_onStateChanged);
     if (_isDoctorChat) {
       unawaited(_startDoctorChatStream());
@@ -90,15 +92,19 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
   final MarkAsReadUseCase _markAsReadUseCase;
   final DeleteMessageUseCase _deleteMessageUseCase;
   final ResolveDoctorIdUseCase _resolveDoctorIdUseCase;
+  final AIService _aiService = AIService();
+  final AiChatDataSource _aiChatDataSource = AiChatDataSourceImpl();
 
   final TextEditingController textController = TextEditingController();
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
   late final StreamSubscription<ChatState> _sub;
   StreamSubscription<dynamic>? _messagesSub;
+  VoidCallback? _onEmergency;
 
   bool _isDoctorChat = true;
   String? _doctorId;
   String? _patientId;
+  String? _sessionId;
   final List<ChatMessage> _messages = [];
 
   bool get isDoctorChat => _isDoctorChat;
@@ -139,17 +145,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     _messages.add(newMessage);
     _emitLoaded();
 
-    Future.delayed(const Duration(seconds: 1), () {
-      _messages.add(
-        ChatMessage(
-          text: "انا الذكاء الاصطبحي لو محتاجني ف حاجه متكلمنيش ",
-          isSender: false,
-          timestamp: DateTime.now(),
-          doctorName: "AI Assistant",
-        ),
-      );
-      _emitLoaded();
-    });
+    unawaited(_sendAIMessage(text));
   }
 
   Future<void> markAsRead(String messageId) async {
@@ -163,27 +159,37 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       patientId: patientId,
       messageId: messageId,
     );
-    result.fold(
-      (failure) => emit(ChatError(failure.message)),
-      (_) {},
-    );
+    result.fold((failure) => emit(ChatError(failure.message)), (_) {});
   }
 
   Future<void> deleteMessage(String messageId) async {
-    if (!_isDoctorChat) return;
-    final doctorId = _doctorId;
-    final patientId = _patientId;
-    if (doctorId == null || patientId == null) return;
+    if (_isDoctorChat) {
+      final doctorId = _doctorId;
+      final patientId = _patientId;
+      if (doctorId == null || patientId == null) return;
 
-    final result = await _deleteMessageUseCase(
-      doctorId: doctorId,
-      patientId: patientId,
-      messageId: messageId,
-    );
-    result.fold(
-      (failure) => emit(ChatError(failure.message)),
-      (_) {},
-    );
+      final result = await _deleteMessageUseCase(
+        doctorId: doctorId,
+        patientId: patientId,
+        messageId: messageId,
+      );
+      result.fold((failure) => emit(ChatError(failure.message)), (_) {});
+    } else {
+      // Delete from AI chat session
+      if (_sessionId == null || _patientId == null) return;
+      
+      try {
+        await _aiChatDataSource.deleteMessage(
+          _patientId!,
+          _sessionId!,
+          messageId,
+        );
+        _messages.removeWhere((msg) => msg.id == messageId);
+        _emitLoaded();
+      } catch (e) {
+        emit(ChatError('Failed to delete message'));
+      }
+    }
   }
 
   Future<void> _startDoctorChatStream() async {
@@ -204,20 +210,18 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     _doctorId = doctorId;
 
     await _messagesSub?.cancel();
-    _messagesSub = _getMessagesUseCase(
-      doctorId: doctorId,
-      patientId: patientId,
-    ).listen((result) {
-      result.fold(
-        (failure) => emit(ChatError(failure.message)),
-        (messages) {
-          _messages
-            ..clear()
-            ..addAll(messages);
-          _emitLoaded();
-        },
-      );
-    });
+    _messagesSub = _getMessagesUseCase(doctorId: doctorId, patientId: patientId)
+        .listen((result) {
+          result.fold((failure) => emit(ChatError(failure.message)), (
+            messages,
+          ) {
+            _messages
+              ..clear()
+              ..addAll(messages);
+            _emitLoaded();
+            unawaited(_markIncomingMessagesAsRead(messages));
+          });
+        });
   }
 
   Future<void> _sendDoctorMessage(String text) async {
@@ -246,13 +250,106 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       senderId: patientId,
       text: text,
     );
-    result.fold(
-      (failure) {
-        emit(ChatError(failure.message));
-        _emitLoaded();
-      },
-      (_) {},
-    );
+    result.fold((failure) {
+      emit(ChatError(failure.message));
+      _emitLoaded();
+    }, (_) {});
+  }
+
+  Future<void> _sendAIMessage(String userText) async {
+    // Initialize session if not already done
+    if (_sessionId == null && !_isDoctorChat) {
+      _patientId ??= await TokenStorage.getUserId();
+      if (_patientId != null) {
+        _sessionId = await _aiChatDataSource.createSession(_patientId!);
+      }
+    }
+
+    // Save user message to Firestore
+    if (_sessionId != null && _patientId != null && !_isDoctorChat) {
+      await _aiChatDataSource.saveMessage(
+        _patientId!,
+        _sessionId!,
+        userText,
+        true,
+      );
+    }
+
+    final result = await _aiService.sendMessage(userText);
+    _messages.add(ChatMessage(
+      text: result.text,
+      isSender: false,
+      timestamp: DateTime.now(),
+      doctorName: "AI Assistant",
+    ));
+
+    // Save AI response to Firestore
+    if (_sessionId != null && _patientId != null && !_isDoctorChat) {
+      await _aiChatDataSource.saveMessage(
+        _patientId!,
+        _sessionId!,
+        result.text,
+        false,
+      );
+      // Update session metadata
+      await _aiChatDataSource.updateSessionMeta(
+        _patientId!,
+        _sessionId!,
+        userText,
+        result.text,
+      );
+    }
+
+    _emitLoaded();
+    if (result.isEmergency) {
+      _onEmergency?.call();
+    }
+  }
+
+  Future<void> initAISession(String? sessionId) async {
+    _sessionId = sessionId;
+    _patientId = await TokenStorage.getUserId();
+    
+    if (_sessionId != null && _patientId != null) {
+      // Load existing session messages
+      await loadSession(_sessionId!);
+    } else if (_sessionId == null && _patientId != null) {
+      // Create new session
+      _sessionId = await _aiChatDataSource.createSession(_patientId!);
+      _addInitialMessages();
+      _emitLoaded();
+    }
+  }
+
+  Future<void> loadSession(String sessionId) async {
+    try {
+      _messages.clear();
+      final messagesStream = _aiChatDataSource.watchMessages(
+        _patientId!,
+        sessionId,
+      );
+      
+      await for (final messages in messagesStream.take(1)) {
+        _messages.addAll(messages);
+      }
+      _emitLoaded();
+    } catch (e) {
+      emit(ChatError('Failed to load session'));
+    }
+  }
+
+  Future<void> forwardToDoctor(String text) async {
+    _isDoctorChat = true;
+    await _sendDoctorMessage(text);
+  }
+
+  Future<void> forwardToAI(String text) async {
+    if (_isDoctorChat) {
+      _isDoctorChat = false;
+      _messages.clear();
+      await initAISession(null);
+    }
+    await _sendAIMessage(text);
   }
 
   void _addInitialMessages() {
@@ -281,6 +378,16 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
 
   void _emitLoaded() {
     emit(ChatLoaded(List<ChatMessage>.unmodifiable(_messages), _isDoctorChat));
+  }
+
+  Future<void> _markIncomingMessagesAsRead(List<ChatMessage> messages) async {
+    if (!_isDoctorChat) return;
+    for (final message in messages) {
+      final messageId = message.id;
+      if (messageId == null || messageId.isEmpty) continue;
+      if (message.isSender || message.isRead) continue;
+      await markAsRead(messageId);
+    }
   }
 
   void _onStateChanged(ChatState state) {
@@ -313,10 +420,15 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
   Future<void> close() async {
     await _messagesSub?.cancel();
     await _sub.cancel();
+    textController.dispose();
     return super.close();
   }
 }
 
 class ChatViewModel extends ChatCubit {
-  ChatViewModel({required super.isDoctorChat});
+  ChatViewModel({required super.isDoctorChat, super.sessionId});
+
+  void setOnEmergency(VoidCallback callback) {
+    _onEmergency = callback;
+  }
 }

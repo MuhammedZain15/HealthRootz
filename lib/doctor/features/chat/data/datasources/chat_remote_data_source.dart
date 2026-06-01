@@ -53,20 +53,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Future<List<ChatMessage>> getMessages(String patientId) async {
     final response = await _dio.get('/messages/$patientId');
     final body = response.data;
-    final List<Object?> rawList =
-        body is List
-            ? body.cast<Object?>()
-            : (body is Map<String, Object?> && body['data'] is List)
-            ? (body['data'] as List).cast<Object?>()
-            : <Object?>[];
+    final List<Object?> rawList = body is List
+        ? body.cast<Object?>()
+        : (body is Map<String, Object?> && body['data'] is List)
+        ? (body['data'] as List).cast<Object?>()
+        : <Object?>[];
 
     return rawList
         .whereType<Map>()
         .map(
           (item) => ChatMessage.fromJson(
-            item.map(
-              (key, value) => MapEntry(key.toString(), value),
-            ),
+            item.map((key, value) => MapEntry(key.toString(), value)),
           ),
         )
         .toList(growable: false);

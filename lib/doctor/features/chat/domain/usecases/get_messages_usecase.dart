@@ -12,9 +12,6 @@ class GetMessagesUseCase {
     required String doctorId,
     required String patientId,
   }) {
-    return _repository.watchMessages(
-      doctorId: doctorId,
-      patientId: patientId,
-    );
+    return _repository.watchMessages(doctorId: doctorId, patientId: patientId);
   }
 }

@@ -23,7 +23,7 @@ class ChatMessage {
     final isSenderFromRole = sender == 'patient';
     return ChatMessage(
       id: (json['id'] ?? json['_id'])?.toString(),
-      text: (json['text'] ?? '').toString(),
+      text: (json['message'] ?? json['text'] ?? '').toString(),
       isSender:
           json['isSender'] as bool? ??
           json['isMe'] as bool? ??
@@ -40,7 +40,7 @@ class ChatMessage {
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'id': id,
-      'text': text,
+      'message': text,
       'isSender': isSender,
       'timestamp': timestamp.toIso8601String(),
       'doctorName': doctorName,
