@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'doctor_chat_session.dart';
 import 'models/chat_model.dart';
 import 'view_models/chat_list_view_model.dart';
 import 'views/chat_detail_page.dart';
@@ -15,7 +16,14 @@ class DoctorChatPage extends StatefulWidget {
 class _DoctorChatPageState extends State<DoctorChatPage> {
   final _vm = ChatListViewModel();
 
+  @override
+  void dispose() {
+    _vm.close();
+    super.dispose();
+  }
+
   void _openChat(BuildContext context, ChatUser user) {
+    DoctorChatSession.activePatientId = user.id;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ChatDetailPage(user: user)),
@@ -67,7 +75,7 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
             listenable: _vm,
             builder: (context, _) => ListView.separated(
               itemCount: _vm.chats.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (ctx, i) => ChatListTile(
                 user: _vm.chats[i],
                 onTap: () => _openChat(context, _vm.chats[i]),

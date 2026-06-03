@@ -1,22 +1,119 @@
-import 'package:flutter/material.dart';
-import '../models/chat_model.dart';
+// lib/doctor/features/chat/view_models/chat_list_view_model.dart
+import 'dart:async';
 
-class ChatListViewModel extends ChangeNotifier {
-  final List<ChatUser> _chats = [
-    ChatUser(id: '1', name: 'John Anderson', lastMessage: 'Thank you for the update, Doctor.', time: '10:30 AM', unreadCount: 2, isActive: true),
-    ChatUser(id: '2', name: 'Sarah Mitchell', lastMessage: 'I have been feeling much better.', time: '9:44 AM'),
-    ChatUser(id: '3', name: 'Michael Chen', lastMessage: 'Can we schedule a follow-up?', time: 'Yesterday'),
-    ChatUser(id: '4', name: 'Emily Rodriguez', lastMessage: 'Here are my latest test results.', time: 'Yesterday'),
-    ChatUser(id: '5', name: 'David Thompson', lastMessage: 'Thank you, Doctor.', time: '2 days ago'),
-    ChatUser(id: '6', name: 'Lisa Wang', lastMessage: 'I will follow the treatment plan.', time: '3 days ago'),
-    ChatUser(id: '7', name: 'Robert Martinez', lastMessage: 'When should I come in next?', time: '3 days ago', unreadCount: 1),
-    ChatUser(id: '8', name: 'Jennifer Brown', lastMessage: 'Thanks for your help!', time: '4 days ago'),
-  ];
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/network/token_storage.dart';
+import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestore_data_source.dart';
+import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/watch_chat_list_usecase.dart';
+import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
 
-  List<ChatUser> get chats => _chats;
+abstract class ChatListState {
+  const ChatListState();
+}
+
+class ChatListInitial extends ChatListState {
+  const ChatListInitial();
+}
+
+class ChatListLoading extends ChatListState {
+  const ChatListLoading();
+}
+
+class ChatListLoaded extends ChatListState {
+  final List<ChatUser> chats;
+  final List<ChatUser> filtered;
+  const ChatListLoaded(this.chats, this.filtered);
+}
+
+class ChatListError extends ChatListState {
+  final String message;
+  const ChatListError(this.message);
+}
+
+class ChatListCubit extends Cubit<ChatListState> implements Listenable {
+  ChatListCubit({WatchChatListUseCase? watchChatListUseCase})
+    : _watchChatListUseCase =
+          watchChatListUseCase ??
+          WatchChatListUseCase(
+            ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+          ),
+      super(const ChatListInitial()) {
+    _sub = stream.listen((_) => _notifyListeners());
+    unawaited(_startChatListStream());
+  }
+
+  final WatchChatListUseCase _watchChatListUseCase;
+  final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
+  late final StreamSubscription<ChatListState> _sub;
+  StreamSubscription<dynamic>? _chatListSub;
+
+  List<ChatUser> _chats = const <ChatUser>[];
+  List<ChatUser> _filtered = const <ChatUser>[];
+
+  List<ChatUser> get chats => _filtered;
+
+  Future<void> _startChatListStream() async {
+    final doctorId = await TokenStorage.getUserId();
+    if (doctorId == null || doctorId.isEmpty) {
+      emit(const ChatListError('Doctor id is missing.'));
+      return;
+    }
+
+    emit(const ChatListLoading());
+    await _chatListSub?.cancel();
+    _chatListSub = _watchChatListUseCase(doctorId: doctorId).listen((result) {
+      result.fold((failure) => emit(ChatListError(failure.message)), (chats) {
+        _chats = chats;
+        _filtered = chats;
+        emit(ChatListLoaded(_chats, _filtered));
+      });
+    });
+  }
+
+  Future<void> loadChats() async {
+    await _startChatListStream();
+  }
 
   void filterChats(String query) {
-    // Implement search logic if needed
-    notifyListeners();
+    final search = query.trim().toLowerCase();
+    _filtered = search.isEmpty
+        ? _chats
+        : _chats
+              .where(
+                (chat) =>
+                    chat.name.toLowerCase().contains(search) ||
+                    chat.lastMessage.toLowerCase().contains(search),
+              )
+              .toList(growable: false);
+    emit(ChatListLoaded(_chats, _filtered));
   }
+
+  @override
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners() {
+    for (final listener in List<VoidCallback>.from(_listeners)) {
+      listener();
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _chatListSub?.cancel();
+    await _sub.cancel();
+    return super.close();
+  }
+}
+
+class ChatListViewModel extends ChatListCubit {
+  ChatListViewModel() : super();
 }

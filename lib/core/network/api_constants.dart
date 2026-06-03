@@ -1,10 +1,12 @@
+import 'api_config.dart';
+
 /// API Constants - Auto-generated from Postman "Health App API" collection.
 class ApiConstants {
   ApiConstants._();
 
   // ─── Base ──────────────────────────────────────────────────────────
-  // Change this to your deployed server URL when going to production.
-  static const String baseUrl = 'http://192.168.1.2:5000/api';
+  // Host/port: edit [ApiConfig] (lib/core/network/api_config.dart).
+  static String get baseUrl => ApiConfig.baseUrl;
 
   // ─── Auth ──────────────────────────────────────────────────────────
   static const String register = '/auth/register';

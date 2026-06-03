@@ -73,7 +73,7 @@ class AlertModel {
       'patientId': patientId,
       'message': message,
       'type': type,
-      if (description != null) 'description': description,
+      'description': ?description,
     };
   }
 

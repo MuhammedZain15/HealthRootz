@@ -16,6 +16,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final _controller = TextEditingController();
 
   @override
+  void dispose() {
+    _vm.close();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -30,14 +37,23 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           children: [
             CircleAvatar(
               backgroundColor: const Color(0xFF1A65EB),
-              child: Text(widget.user.name.substring(0, 2).toUpperCase(), style: const TextStyle(color: Colors.white)),
+              child: Text(
+                widget.user.name.substring(0, 2).toUpperCase(),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.user.name, style: const TextStyle(color: Colors.black, fontSize: 16)),
-                const Text('Active now', style: TextStyle(color: Colors.green, fontSize: 12)),
+                Text(
+                  widget.user.name,
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                ),
+                const Text(
+                  'Active now',
+                  style: TextStyle(color: Colors.green, fontSize: 12),
+                ),
               ],
             ),
           ],
@@ -51,7 +67,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               child: ListView.builder(
                 padding: const EdgeInsets.only(top: 16),
                 itemCount: _vm.messages.length,
-                itemBuilder: (ctx, i) => MessageBubble(message: _vm.messages[i]),
+                itemBuilder: (ctx, i) =>
+                    MessageBubble(message: _vm.messages[i]),
               ),
             ),
             ChatInputArea(
