@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "888113065281",
+    "project_id": "health-rootz",
+    "storage_bucket": "health-rootz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:888113065281:android:9d34c38227d189f930c5c0",
+        "android_client_info": {
+          "package_name": "com.example.grad_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEjY43vp2dhI9AaeCy91RDY0VsegiJ0do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
