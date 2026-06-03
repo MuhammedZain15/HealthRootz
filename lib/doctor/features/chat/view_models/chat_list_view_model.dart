@@ -34,12 +34,12 @@ class ChatListError extends ChatListState {
 
 class ChatListCubit extends Cubit<ChatListState> implements Listenable {
   ChatListCubit({WatchChatListUseCase? watchChatListUseCase})
-      : _watchChatListUseCase =
-            watchChatListUseCase ??
-            WatchChatListUseCase(
-              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-            ),
-        super(const ChatListInitial()) {
+    : _watchChatListUseCase =
+          watchChatListUseCase ??
+          WatchChatListUseCase(
+            ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+          ),
+      super(const ChatListInitial()) {
     _sub = stream.listen((_) => _notifyListeners());
     unawaited(_startChatListStream());
   }
@@ -64,14 +64,11 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
     emit(const ChatListLoading());
     await _chatListSub?.cancel();
     _chatListSub = _watchChatListUseCase(doctorId: doctorId).listen((result) {
-      result.fold(
-        (failure) => emit(ChatListError(failure.message)),
-        (chats) {
-          _chats = chats;
-          _filtered = chats;
-          emit(ChatListLoaded(_chats, _filtered));
-        },
-      );
+      result.fold((failure) => emit(ChatListError(failure.message)), (chats) {
+        _chats = chats;
+        _filtered = chats;
+        emit(ChatListLoaded(_chats, _filtered));
+      });
     });
   }
 
@@ -81,16 +78,15 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 
   void filterChats(String query) {
     final search = query.trim().toLowerCase();
-    _filtered =
-        search.isEmpty
-            ? _chats
-            : _chats
-                .where(
-                  (chat) =>
-                      chat.name.toLowerCase().contains(search) ||
-                      chat.lastMessage.toLowerCase().contains(search),
-                )
-                .toList(growable: false);
+    _filtered = search.isEmpty
+        ? _chats
+        : _chats
+              .where(
+                (chat) =>
+                    chat.name.toLowerCase().contains(search) ||
+                    chat.lastMessage.toLowerCase().contains(search),
+              )
+              .toList(growable: false);
     emit(ChatListLoaded(_chats, _filtered));
   }
 

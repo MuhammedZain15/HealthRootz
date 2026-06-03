@@ -2,7 +2,8 @@
 class ChatIdHelper {
   ChatIdHelper._();
 
-  static String build(String doctorId, String patientId) => '${doctorId}_$patientId';
+  static String build(String doctorId, String patientId) =>
+      '${doctorId}_$patientId';
 
   static String? doctorIdFromChatId(String chatId, String patientId) {
     final suffix = '_$patientId';
