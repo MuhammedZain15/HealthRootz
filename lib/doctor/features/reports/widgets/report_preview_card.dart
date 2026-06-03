@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:grad_project/doctor/features/patients/model/patient_model.dart';
-import 'package:grad_project/doctor/features/reports/model/report_data.dart';
-import 'package:grad_project/doctor/features/reports/widgets/metric_card.dart';
+import 'package:grad_project/core/models/report_model.dart';
 
+/// Shows a read-only preview of a single [ApiReport] returned from the API.
+///
+/// Used on the doctor side after a report is generated or selected from
+/// the list.
 class ReportPreviewCard extends StatelessWidget {
-  final Patient? selectedPatient;
-  final DateTime startDate;
-  final DateTime endDate;
-  final ReportData? data;
+  /// The report to preview. When null, shows an empty placeholder.
+  final ApiReport? report;
 
-  const ReportPreviewCard({
-    super.key,
-    required this.selectedPatient,
-    required this.startDate,
-    required this.endDate,
-    required this.data,
-  });
+  const ReportPreviewCard({super.key, required this.report});
 
   @override
   Widget build(BuildContext context) {
@@ -39,51 +33,45 @@ class ReportPreviewCard extends StatelessWidget {
         children: [
           const Text(
             'Report Preview',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           const SizedBox(height: 12),
-          if (selectedPatient == null)
-            _EmptyPreview()
-          else
-            _ReportPreviewContent(
-              patient: selectedPatient!,
-              startDate: startDate,
-              endDate: endDate,
-              data: data,
-            ),
+          report == null ? const _EmptyPreview() : _ReportContent(report: report!),
         ],
       ),
     );
   }
 }
 
+// ── Empty state ──────────────────────────────────────────────────────────────
+
 class _EmptyPreview extends StatelessWidget {
+  const _EmptyPreview();
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28),
+      padding: const EdgeInsets.symmetric(vertical: 32),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Column(
-        children: const [
-          Icon(
-            Icons.insert_drive_file_outlined,
-            size: 38,
-            color: Color(0xFF9CA3AF),
-          ),
+      child: const Column(
+        children: [
+          Icon(Icons.insert_drive_file_outlined,
+              size: 40, color: Color(0xFF9CA3AF)),
           SizedBox(height: 10),
           Text(
-            'No Patient Selected',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            'No Report Selected',
+            style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF374151)),
           ),
           SizedBox(height: 6),
           Text(
-            'Select a patient and date range to preview the report',
-            style: TextStyle(color: Color(0xFF6B7280)),
+            'Generate or select a report to see its preview here.',
+            style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -91,150 +79,176 @@ class _EmptyPreview extends StatelessWidget {
   }
 }
 
-class _ReportPreviewContent extends StatelessWidget {
-  final Patient patient;
-  final DateTime startDate;
-  final DateTime endDate;
-  final ReportData? data;
+// ── Report content ───────────────────────────────────────────────────────────
 
-  const _ReportPreviewContent({
-    required this.patient,
-    required this.startDate,
-    required this.endDate,
-    required this.data,
-  });
+class _ReportContent extends StatelessWidget {
+  final ApiReport report;
+  const _ReportContent({required this.report});
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat('dd/MM/yyyy');
-    final report = data;
-
-    if (report == null) {
-      return const Text('No data available for this patient.');
-    }
+    final df = DateFormat('dd MMM yyyy');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Medical Report',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        // ── Title & patient ──────────────────────────────────────────
+        Text(
+          report.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+            color: Color(0xFF111827),
+          ),
         ),
         const SizedBox(height: 6),
-        Text('Patient: ${patient.name}'),
-        Text('Report Period: ${df.format(startDate)} to ${df.format(endDate)}'),
-        const SizedBox(height: 14),
-        MetricCard(
-          title: 'Heart Rate',
-          value: '${report.heartRateAvg} bpm',
-          subtitle: 'Average over period',
-          minMax:
-              'Min: ${report.heartRateMin} bpm  •  Max: ${report.heartRateMax} bpm',
-          abnormal: 'Abnormal readings: ${report.heartRateAbnormal}',
-          tint: const Color(0xFFFEE2E2),
-          accent: const Color(0xFFDC2626),
+        if (report.patientName != null)
+          _InfoRow(
+            icon: Icons.person_outline,
+            text: report.patientName!,
+          ),
+        _InfoRow(
+          icon: Icons.date_range_outlined,
+          text:
+              '${df.format(report.startDate)}  →  ${df.format(report.endDate)}',
         ),
-        const SizedBox(height: 12),
-        MetricCard(
-          title: 'EMG Readings',
-          value: '${report.emgAvg} µV',
-          subtitle: 'Average over period',
-          minMax: 'Min: ${report.emgMin} µV  •  Max: ${report.emgMax} µV',
-          abnormal: 'Abnormal readings: ${report.emgAbnormal}',
-          tint: const Color(0xFFDBEAFE),
-          accent: const Color(0xFF2563EB),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+        const SizedBox(height: 16),
+
+        // ── AI Recommendation ────────────────────────────────────────
+        if (report.aiRecommendation.isNotEmpty) ...[
+          _SectionBox(
             color: const Color(0xFFF5F3FF),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE9D5FF)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'AI Analysis & Conclusions',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              ...report.analysis.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('•  '),
-                      Expanded(child: Text(item)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3E8FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: Color(0xFF5B21B6)),
-                    children: [
-                      const TextSpan(
-                        text: 'AI Recommendations:\n',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+            borderColor: const Color(0xFFE9D5FF),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.auto_awesome_outlined,
+                        size: 16, color: Color(0xFF7C3AED)),
+                    SizedBox(width: 6),
+                    Text(
+                      'AI Recommendation',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF5B21B6),
                       ),
-                      TextSpan(text: report.recommendation),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  report.aiRecommendation,
+                  style: const TextStyle(
+                    color: Color(0xFF5B21B6),
+                    height: 1.5,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          const SizedBox(height: 14),
+        ],
+
+        // ── Doctor's notes ───────────────────────────────────────────
+        if (report.doctorNotes.isNotEmpty) ...[
+          _SectionBox(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderColor: const Color(0xFFE5E7EB),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.edit_note_outlined,
+                        size: 18, color: Color(0xFF374151)),
+                    SizedBox(width: 6),
+                    Text(
+                      "Doctor's Notes",
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  report.doctorNotes,
+                  style: const TextStyle(
+                    color: Color(0xFF374151),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Generated: ${DateFormat('d MMM yyyy, h:mm a').format(report.createdAt)}',
+                  style: const TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Doctor's Notes",
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                report.doctorNotes,
-                style: const TextStyle(height: 1.4, color: Color(0xFF374151)),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                '${report.doctorName} • ${DateFormat('d/M/yyyy').format(report.doctorNoteDate)}',
-                style: const TextStyle(color: Color(0xFF6B7280)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Footer note ──────────────────────────────────────────────
         const Center(
           child: Text(
-            'This is a preview. The actual report will include detailed charts and complete medical data.',
-            style: TextStyle(color: Color(0xFF6B7280)),
+            'This preview reflects the data saved on the server.',
+            style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Helper widgets ───────────────────────────────────────────────────────────
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _InfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF6B7280)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionBox extends StatelessWidget {
+  final Color color;
+  final Color borderColor;
+  final Widget child;
+  const _SectionBox(
+      {required this.color, required this.borderColor, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: child,
     );
   }
 }

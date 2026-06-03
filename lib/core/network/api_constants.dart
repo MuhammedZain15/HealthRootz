@@ -32,6 +32,7 @@ class ApiConstants {
 
   // ─── Reports ───────────────────────────────────────────────────────
   static const String reports = '/reports';
+  static const String reportsExport = '/reports/export';
   static String reportById(String id) => '/reports/$id';
 
   // ─── Chat ──────────────────────────────────────────────────────────
