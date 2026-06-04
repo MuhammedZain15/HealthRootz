@@ -7,15 +7,32 @@ import 'package:grad_project/patient/features/home/home_page.dart';
 import 'package:grad_project/patient/features/profile/profile_page.dart';
 import 'package:grad_project/patient/layout/buttom_sheet.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 
-class AppLayout extends StatefulWidget {
+class AppLayout extends StatelessWidget {
   const AppLayout({super.key});
 
   @override
-  State<AppLayout> createState() => _AppLayoutState();
+  Widget build(BuildContext context) {
+    return BlocProvider<PatientCubit>(
+      create: (context) => PatientCubit(
+        PatientRepositoryImpl(),
+      )..fetchMe(),
+      child: const _AppLayoutContent(),
+    );
+  }
 }
 
-class _AppLayoutState extends State<AppLayout> {
+class _AppLayoutContent extends StatefulWidget {
+  const _AppLayoutContent();
+
+  @override
+  State<_AppLayoutContent> createState() => _AppLayoutState();
+}
+
+class _AppLayoutState extends State<_AppLayoutContent> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [

@@ -1,9 +1,6 @@
-import 'package:grad_project/core/models/patient_model.dart' as api;
-import 'package:grad_project/core/services/patient_service.dart';
 import '../models/add_patient_model.dart';
 
 class AddPatientViewModel {
-  final PatientService _patientService = PatientService();
 
   String? validate(AddPatientModel form) {
     if (form.name.trim().isEmpty) return 'Enter patient full name';
@@ -26,57 +23,18 @@ class AddPatientViewModel {
     return null;
   }
 
-  api.PatientModel toApiModel(AddPatientModel form) {
-    return api.PatientModel(
-      name: form.name.trim(),
-      email: form.email.trim(),
-      age: int.parse(form.age.trim()),
-      phone: form.phone.trim(),
-      gender: form.gender,
-      medicalHistory: form.medicalHistory.trim().isEmpty
+  Map<String, dynamic> toMap(AddPatientModel form) {
+    return {
+      'name': form.name.trim(),
+      'email': form.email.trim(),
+      'age': int.parse(form.age.trim()),
+      'phone': form.phone.trim(),
+      'gender': form.gender,
+      'medicalHistory': form.medicalHistory.trim().isEmpty
           ? 'No significant prior history.'
           : form.medicalHistory.trim(),
-      condition: form.condition.trim(),
-      status: form.status,
-    );
-  }
-
-  Future<(AddPatientModel, api.PatientModel?, String?)> createPatient(
-    AddPatientModel current,
-  ) async {
-    final validation = validate(current);
-    if (validation != null) {
-      return (current.copyWith(errorMessage: validation), null, validation);
-    }
-
-    try {
-      final result = await _patientService.createPatient(toApiModel(current));
-
-      if (result.success && result.data != null) {
-        return (
-          current.copyWith(isLoading: false, clearError: true),
-          result.data,
-          null,
-        );
-      }
-
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: result.message ?? 'Failed to add patient',
-        ),
-        null,
-        result.message,
-      );
-    } catch (e) {
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: 'Error: ${e.toString()}',
-        ),
-        null,
-        e.toString(),
-      );
-    }
+      'condition': form.condition.trim(),
+      'status': form.status,
+    };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/doctor/features/home/cubit/add_patient_cubit.dart';
 import 'package:grad_project/doctor/features/home/models/add_patient_model.dart';
 import 'package:grad_project/doctor/features/home/widgets/add_patient_form.dart';
@@ -28,7 +29,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = AddPatientCubit();
+    _cubit = AddPatientCubit(context.read<PatientCubit>());
   }
 
   @override
@@ -65,7 +66,7 @@ class _AddPatientPageState extends State<AddPatientPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Patient ${patient.name ?? 'added'} created successfully',
+            'Patient ${patient.name} created successfully',
           ),
           backgroundColor: AppColors.skyBlue,
         ),

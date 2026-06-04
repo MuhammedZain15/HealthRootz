@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import '../cubit/doctor_patients_cubit.dart';
 import '../models/doctor_patients_list_model.dart';
 import '../patient_details_page.dart';
@@ -137,10 +138,9 @@ class _PatientListState extends State<PatientList> {
                                         const AlwaysScrollableScrollPhysics(),
                                     children: [
                                       SizedBox(
-                                        height:
-                                            constraints.maxHeight > 200
-                                                ? constraints.maxHeight * 0.4
-                                                : 120,
+                                        height: constraints.maxHeight > 200
+                                            ? constraints.maxHeight * 0.4
+                                            : 120,
                                         child: Center(
                                           child: Text(
                                             state.isLoading
@@ -165,14 +165,19 @@ class _PatientListState extends State<PatientList> {
                                       return PatientCard(
                                         patient: patient,
                                         onViewDetails: () {
+                                          final patientCubit = context
+                                              .read<PatientCubit>();
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  PatientDetailsPage(
-                                                patientId: patient.id,
-                                                preview: patient,
-                                              ),
+                                                  BlocProvider.value(
+                                                    value: patientCubit,
+                                                    child: PatientDetailsPage(
+                                                      patientId: patient.id,
+                                                      preview: patient,
+                                                    ),
+                                                  ),
                                             ),
                                           );
                                         },
