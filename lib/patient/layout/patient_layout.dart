@@ -10,16 +10,24 @@ import 'package:grad_project/shared/widgets/responsive_layout.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
+import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 
 class AppLayout extends StatelessWidget {
   const AppLayout({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<PatientCubit>(
-      create: (context) => PatientCubit(
-        PatientRepositoryImpl(),
-      )..fetchMe(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<PatientCubit>(
+          create: (context) => PatientCubit(
+            PatientRepositoryImpl(),
+          )..fetchMe(),
+        ),
+        BlocProvider<PatientAppointmentsCubit>(
+          create: (context) => PatientAppointmentsCubit()..loadAppointments(),
+        ),
+      ],
       child: const _AppLayoutContent(),
     );
   }

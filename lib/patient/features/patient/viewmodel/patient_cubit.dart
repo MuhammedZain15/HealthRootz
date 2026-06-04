@@ -30,7 +30,13 @@ class PatientCubit extends Cubit<PatientState> {
     final result = await _repository.getMe();
     result.fold(
       (failure) => emit(PatientError(failure.message)),
-      (patient) => emit(PatientLoaded(patient)),
+      (patient) {
+        if (!patient.hasProfileData) {
+          emit(PatientError('Patient profile is empty in API response'));
+          return;
+        }
+        emit(PatientLoaded(patient));
+      },
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:grad_project/core/network/token_storage.dart';
 import 'package:grad_project/core/services/appointment_service.dart';
 import 'package:intl/intl.dart';
@@ -100,18 +101,35 @@ class PatientBookingViewModel {
     final slot = current.selectedSlotLabel;
 
     if (patientId == null || patientId.isEmpty) {
-      return (current, 'Patient ID not found. Please log in again.');
+      const msg = 'Patient ID not found. Please log in again.';
+      debugPrint('[Booking] Validation error: $msg');
+      return (
+        current.copyWith(isBooking: false, errorMessage: msg, isSuccess: false),
+        msg,
+      );
     }
     if (selectedDate == null || slot == null) {
-      return (current, 'Please select date and time');
+      const msg = 'Please select date and time';
+      debugPrint('[Booking] Validation error: $msg');
+      return (
+        current.copyWith(isBooking: false, errorMessage: msg, isSuccess: false),
+        msg,
+      );
     }
 
-    final reason = current.reason.trim().isEmpty
-        ? 'Routine checkup'
-        : current.reason.trim();
+    final reason = current.reason.trim();
+    if (reason.isEmpty) {
+      const msg = 'Please enter a reason for your appointment';
+      debugPrint('[Booking] Validation error: $msg');
+      return (
+        current.copyWith(isBooking: false, errorMessage: msg, isSuccess: false),
+        msg,
+      );
+    }
 
     try {
       final iso = buildIsoDateTime(selectedDate, slot);
+      debugPrint('[Booking] Calling POST /appointments...');
       final result = await _appointmentService.createAppointment(
         patientId: patientId,
         dateIso: iso,
@@ -119,6 +137,7 @@ class PatientBookingViewModel {
       );
 
       if (result.success) {
+        debugPrint('[Booking] createAppointment succeeded in view model');
         return (
           current.copyWith(
             isBooking: false,
@@ -129,20 +148,26 @@ class PatientBookingViewModel {
         );
       }
 
+      final msg = result.message ?? 'Failed to book appointment';
+      debugPrint('[Booking] createAppointment failed: $msg');
       return (
         current.copyWith(
           isBooking: false,
-          errorMessage: result.message ?? 'Failed to book appointment',
+          isSuccess: false,
+          errorMessage: msg,
         ),
-        result.message,
+        msg,
       );
     } catch (e) {
+      final msg = 'Error: ${e.toString()}';
+      debugPrint('[Booking] createAppointment exception: $msg');
       return (
         current.copyWith(
           isBooking: false,
-          errorMessage: 'Error: ${e.toString()}',
+          isSuccess: false,
+          errorMessage: msg,
         ),
-        e.toString(),
+        msg,
       );
     }
   }

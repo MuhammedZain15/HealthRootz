@@ -4,6 +4,7 @@ import 'package:grad_project/core/network/api_client.dart';
 import 'package:grad_project/core/network/api_constants.dart';
 
 import '../models/patient_model.dart';
+import '../utils/patient_response_parser.dart';
 import 'patient_repository.dart';
 
 /// Concrete implementation of [PatientRepository] using [ApiClient] (Dio).
@@ -21,7 +22,10 @@ class PatientRepositoryImpl implements PatientRepository {
   Future<Either<ServerFailure, PatientModel>> getMe() async {
     try {
       final response = await _dio.get(ApiConstants.patientMe);
-      return Right(PatientModel.fromJson(_unwrapMap(response.data)));
+      return _parsePatientResponse(
+        response.data,
+        endpoint: 'GET ${ApiConstants.patientMe}',
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(_extractError(e)));
     }
@@ -51,7 +55,10 @@ class PatientRepositoryImpl implements PatientRepository {
       String id) async {
     try {
       final response = await _dio.get(ApiConstants.patientById(id));
-      return Right(PatientModel.fromJson(_unwrapMap(response.data)));
+      return _parsePatientResponse(
+        response.data,
+        endpoint: 'GET ${ApiConstants.patientById(id)}',
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(_extractError(e)));
     }
@@ -65,7 +72,10 @@ class PatientRepositoryImpl implements PatientRepository {
     try {
       final response =
           await _dio.get('${ApiConstants.patientById(id)}/details');
-      return Right(PatientModel.fromJson(_unwrapMap(response.data)));
+      return _parsePatientResponse(
+        response.data,
+        endpoint: 'GET ${ApiConstants.patientById(id)}/details',
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(_extractError(e)));
     }
@@ -78,7 +88,10 @@ class PatientRepositoryImpl implements PatientRepository {
       Map<String, dynamic> body) async {
     try {
       final response = await _dio.post(ApiConstants.patients, data: body);
-      return Right(PatientModel.fromJson(_unwrapMap(response.data)));
+      return _parsePatientResponse(
+        response.data,
+        endpoint: 'POST ${ApiConstants.patients}',
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(_extractError(e)));
     }
@@ -92,7 +105,10 @@ class PatientRepositoryImpl implements PatientRepository {
     try {
       final response =
           await _dio.put(ApiConstants.patientById(id), data: body);
-      return Right(PatientModel.fromJson(_unwrapMap(response.data)));
+      return _parsePatientResponse(
+        response.data,
+        endpoint: 'PUT ${ApiConstants.patientById(id)}',
+      );
     } on DioException catch (e) {
       return Left(ServerFailure(_extractError(e)));
     }
@@ -143,22 +159,38 @@ class PatientRepositoryImpl implements PatientRepository {
 
   // ─── Private Helpers ───────────────────────────────────────────────
 
+  Either<ServerFailure, PatientModel> _parsePatientResponse(
+    dynamic body, {
+    required String endpoint,
+  }) {
+    PatientResponseParser.logRawResponse(endpoint, body);
+
+    final patient = PatientModel.tryFromJson(body);
+    if (patient != null) {
+      return Right(patient);
+    }
+
+    if (body is Map) {
+      final keys = Map<String, dynamic>.from(body).keys.join(', ');
+      return Left(
+        ServerFailure(
+          'Patient data missing in API response (keys: $keys). '
+          'Expected patient fields under data, patient, user, or result.',
+        ),
+      );
+    }
+
+    return const Left(
+      ServerFailure('Invalid patient API response format'),
+    );
+  }
+
   /// Unwraps a `{ "data": {...} }` envelope or returns the map as-is.
   Map<String, dynamic> _unwrapMap(dynamic body) {
-    if (body is Map<String, dynamic>) {
-      if (body['data'] is Map<String, dynamic>) {
-        return body['data'] as Map<String, dynamic>;
-      }
-      return body;
-    }
-    if (body is Map) {
-      final map = Map<String, dynamic>.from(body);
-      if (map['data'] is Map) {
-        return Map<String, dynamic>.from(map['data'] as Map);
-      }
-      return map;
-    }
-    return <String, dynamic>{};
+    return PatientResponseParser.extractPatientMap(body) ??
+        (body is Map
+            ? Map<String, dynamic>.from(body)
+            : <String, dynamic>{});
   }
 
   /// Unwraps a `{ "data": [...] }` envelope or returns the list as-is.

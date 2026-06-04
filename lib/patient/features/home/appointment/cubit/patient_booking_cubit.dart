@@ -10,6 +10,18 @@ class PatientBookingCubit extends Cubit<PatientBookingModel> {
 
   PatientBookingCubit([this._patientCubit]) : super(PatientBookingModel.initial());
 
+  /// Starts booking without a doctor-selection step (date → slots → reason).
+  Future<void> initializeBooking() async {
+    final resolvedId =
+        _resolvePatientIdFromCubit() ?? await _viewModel.resolvePatientId();
+    emit(
+      PatientBookingModel.initial().copyWith(
+        patientId: resolvedId,
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> initializeDoctor({
     required String doctorName,
     required String specialty,

@@ -1,3 +1,5 @@
+import '../utils/patient_response_parser.dart';
+
 /// A single doctor note attached to a patient record.
 class PatientNoteModel {
   final String id;
@@ -42,7 +44,7 @@ class PatientNoteModel {
 /// Patient model for the patient feature.
 ///
 /// All required fields are non-nullable; only [medicalHistory] is optional.
-/// Supports both flat JSON and `{ "data": {...} }` envelope responses.
+/// Supports flat JSON and envelopes (`data`, `patient`, `user`, `result`, etc.).
 class PatientModel {
   final String id;
   final String name;
@@ -71,25 +73,34 @@ class PatientModel {
   // ─── Deserialization ───────────────────────────────────────────────
 
   factory PatientModel.fromJson(Map<String, dynamic> json) {
-    // Unwrap `{ "data": {...} }` envelope if present.
     final Map<String, dynamic> data =
-        json['data'] is Map<String, dynamic>
-            ? json['data'] as Map<String, dynamic>
-            : json;
+        PatientResponseParser.extractPatientMap(json) ?? json;
 
     return PatientModel(
-      id: (data['_id'] ?? data['id'] ?? '') as String,
-      name: (data['name'] ?? '') as String,
-      email: (data['email'] ?? '') as String,
+      id: _parseString(data['_id'] ?? data['id']),
+      name: _parseString(data['name']),
+      email: _parseString(data['email']),
       age: _parseInt(data['age']),
-      phone: (data['phone'] ?? '') as String,
-      gender: (data['gender'] ?? '') as String,
-      medicalHistory: data['medicalHistory'] as String?,
-      condition: (data['condition'] ?? '') as String,
-      status: (data['status'] ?? '') as String,
+      phone: _parseString(data['phone']),
+      gender: _parseString(data['gender']),
+      medicalHistory: _parseOptionalString(data['medicalHistory']),
+      condition: _parseString(data['condition']),
+      status: _parseString(data['status']),
       notes: _parseNotes(data['notes'] ?? data['doctorNotes']),
     );
   }
+
+  /// Returns null when the JSON does not contain usable patient fields.
+  static PatientModel? tryFromJson(dynamic json) {
+    if (json is! Map) return null;
+    final map = PatientResponseParser.extractPatientMap(json);
+    if (map == null || !PatientResponseParser.hasMinimumPatientFields(map)) {
+      return null;
+    }
+    return PatientModel.fromJson(map);
+  }
+
+  bool get hasProfileData => id.isNotEmpty || name.isNotEmpty || email.isNotEmpty;
 
   static List<PatientNoteModel> _parseNotes(dynamic raw) {
     if (raw is! List) return const [];
@@ -143,6 +154,17 @@ class PatientModel {
     if (value == null) return 0;
     if (value is int) return value;
     return int.tryParse(value.toString()) ?? 0;
+  }
+
+  static String _parseString(dynamic value) {
+    if (value == null) return '';
+    return value.toString();
+  }
+
+  static String? _parseOptionalString(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    return text.isEmpty ? null : text;
   }
 
   @override
