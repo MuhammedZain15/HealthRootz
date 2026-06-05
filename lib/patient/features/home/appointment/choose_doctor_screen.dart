@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/patient/features/home/appointment/cubit/patient_booking_cubit.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/patient/features/home/appointment/select_date_time_screen.dart';
 
 import 'appointment_widgets.dart';
@@ -19,7 +20,7 @@ class _ChooseDoctorScreenState extends State<ChooseDoctorScreen> {
   @override
   void initState() {
     super.initState();
-    _cubit = PatientBookingCubit();
+    _cubit = PatientBookingCubit(context.read<PatientCubit>());
   }
 
   @override

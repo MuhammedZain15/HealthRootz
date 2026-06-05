@@ -1,95 +1,43 @@
-import 'package:grad_project/core/models/user_model.dart';
-import 'package:grad_project/core/services/auth_service.dart';
+import 'package:grad_project/patient/features/patient/data/models/patient_model.dart';
 import 'package:grad_project/patient/features/profile/models/patient_profile_model.dart';
-
 
 /// Patient Profile ViewModel - Business Logic Layer
 /// Handles all business logic for patient profile
-/// Transforms UserModel data into PatientProfileModel state
+/// Transforms PatientModel data into PatientProfileModel state
 class PatientProfileViewModel {
-  final AuthService _authService = AuthService();
-
-  /// Convert UserModel to PatientProfileModel
-  PatientProfileModel modelFromUser(UserModel? user) {
-    if (user == null) {
+  /// Convert PatientModel to PatientProfileModel
+  PatientProfileModel modelFromPatient(PatientModel? patient) {
+    if (patient == null) {
       return PatientProfileModel.initial();
     }
 
     return PatientProfileModel(
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      age: user.age,
-      gender: user.gender,
-      medicalHistory: user.medicalHistory,
-      address: user.address,
+      id: patient.id,
+      name: patient.name,
+      email: patient.email,
+      phone: patient.phone,
+      age: patient.age,
+      gender: patient.gender,
+      medicalHistory: patient.medicalHistory,
+      address: '', // Address not available in new PatientModel
     );
   }
 
-  /// Fetch profile from backend
-  Future<(PatientProfileModel, String?)> fetchProfile() async {
-    try {
-      final result = await _authService.getProfile();
-
-      if (result.success && result.data != null) {
-        final profile = modelFromUser(result.data);
-        return (profile, null);
-      } else {
-        return (
-          PatientProfileModel.initial(),
-          result.message ?? 'Failed to fetch profile',
-        );
-      }
-    } catch (e) {
-      return (PatientProfileModel.initial(), 'Error: ${e.toString()}');
-    }
-  }
-
-  /// Update profile on backend
-  Future<(PatientProfileModel, String?)> updateProfile({
+  Map<String, dynamic> createUpdateMap({
     required String name,
     required String phone,
     required int age,
     required String gender,
     required String medicalHistory,
     required String address,
-  }) async {
-    try {
-      // Validate inputs
-      final validation = validateProfileData(
-        name: name,
-        phone: phone,
-        age: age,
-      );
-
-      if (validation != null) {
-        return (PatientProfileModel.initial(), validation);
-      }
-
-      final updates = {
-        'name': name,
-        'phone': phone,
-        'age': age,
-        'gender': gender,
-        'medicalHistory': medicalHistory,
-        'address': address,
-      };
-
-      final result = await _authService.updateProfile(updates);
-
-      if (result.success && result.data != null) {
-        final profile = modelFromUser(result.data);
-        return (profile, null);
-      } else {
-        return (
-          PatientProfileModel.initial(),
-          result.message ?? 'Failed to update profile',
-        );
-      }
-    } catch (e) {
-      return (PatientProfileModel.initial(), 'Error: ${e.toString()}');
-    }
+  }) {
+    return {
+      'name': name,
+      'phone': phone,
+      'age': age,
+      'gender': gender,
+      'medicalHistory': medicalHistory,
+    };
   }
 
   /// Validate profile data

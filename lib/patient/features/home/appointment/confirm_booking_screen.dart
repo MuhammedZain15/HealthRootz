@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/home/appointment/cubit/patient_booking_cubit.dart';
 import 'package:grad_project/patient/features/home/appointment/models/patient_booking_model.dart';
-import 'package:grad_project/patient/layout/patient_layout.dart';
+import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 
 import 'appointment_widgets.dart';
 
@@ -23,19 +24,66 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
     super.dispose();
   }
 
+  Future<void> _onBookingSuccess(BuildContext context) async {
+    debugPrint('[Booking] UI: success state received, refreshing appointments');
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<PatientAppointmentsCubit>().loadAppointments();
+      debugPrint('[Booking] UI: appointments list refreshed');
+    } catch (e) {
+      debugPrint('[Booking] UI: could not refresh appointments — $e');
+    }
+
+    if (!mounted) return;
+
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    debugPrint('[Booking] UI: navigated back to AppLayout');
+
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Appointment booked successfully!'),
+        backgroundColor: AppColors.skyBlue,
+      ),
+    );
+    debugPrint('[Booking] UI: confirmation snackbar shown');
+  }
+
+  Future<void> _handleConfirm(PatientBookingCubit cubit, PatientBookingModel state) async {
+    debugPrint(
+      '[Booking] UI: confirm pressed — patientId=${state.patientId}, '
+      'date=${state.selectedDate?.apiDate}, slot=${state.selectedSlotLabel}, '
+      'reason="${state.reason}"',
+    );
+
+    final success = await cubit.confirmBooking();
+
+    if (!mounted) return;
+
+    final after = cubit.state;
+    debugPrint(
+      '[Booking] UI: confirmBooking finished — success=$success, '
+      'isSuccess=${after.isSuccess}, error=${after.errorMessage}',
+    );
+
+    if (!after.isSuccess && after.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(after.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<PatientBookingCubit, PatientBookingModel>(
+      listenWhen: (previous, current) =>
+          !previous.isSuccess && current.isSuccess,
       listener: (context, state) {
         if (state.isSuccess) {
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute
-          (builder: (context) => const AppLayout()), (route) => false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Appointment booked successfully!'),
-              backgroundColor: AppColors.skyBlue,
-            ),
-          );
+          _onBookingSuccess(context);
         }
       },
       builder: (context, state) {
@@ -53,7 +101,9 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                       children: [
                         AppointmentHeader(
                           title: 'Book Appointment',
-                          subtitle: 'Confirm booking',
+                          subtitle: (state.doctorName ?? '').isNotEmpty
+                              ? 'Confirm booking'
+                              : 'Step 3 — Confirm booking',
                           onBack: () => Navigator.pop(context),
                         ),
                         Row(
@@ -120,7 +170,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                               _buildDetailRow(
                                 icon: Icons.medical_services_outlined,
                                 label: 'Doctor',
-                                value: state.doctorName ?? '',
+                                value: state.doctorName ?? 'General appointment',
                                 subValue: state.specialty,
                               ),
                               const SizedBox(height: 24),
@@ -141,7 +191,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                                 onChanged: cubit.setReason,
                                 maxLines: 2,
                                 decoration: InputDecoration(
-                                  labelText: 'Reason (optional)',
+                                  labelText: 'Reason',
                                   hintText: 'e.g. Routine checkup',
                                   filled: true,
                                   fillColor: const Color(0xFFF8FAFC),
@@ -176,7 +226,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                     child: ElevatedButton(
                       onPressed: state.isBooking
                           ? null
-                          : () => cubit.confirmBooking(),
+                          : () => _handleConfirm(cubit, state),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.skyBlue,
                         foregroundColor: Colors.white,
@@ -249,7 +299,7 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                     color: Color(0xFF1E293B),
                   ),
                 ),
-                if (subValue != null)
+                if (subValue != null && subValue.isNotEmpty)
                   Text(
                     subValue,
                     style: const TextStyle(

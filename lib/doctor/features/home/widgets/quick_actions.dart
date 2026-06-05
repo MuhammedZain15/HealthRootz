@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/doctor/features/home/booked_appointments_page.dart';
 import 'package:grad_project/doctor/features/home/add_patient_page.dart';
 
@@ -25,9 +27,15 @@ class QuickActions extends StatelessWidget {
           _buildActionButton(
             label: "Add New Patient",
             onPressed: () {
+              final patientCubit = context.read<PatientCubit>();
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AddPatientPage()),
+                MaterialPageRoute(
+                  builder: (context) => BlocProvider.value(
+                    value: patientCubit,
+                    child: const AddPatientPage(),
+                  ),
+                ),
               );
             },
             isPrimary: true,

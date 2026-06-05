@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/appointment_model.dart';
 import '../network/api_client.dart';
@@ -14,15 +15,22 @@ class AppointmentService {
     required String dateIso,
     required String reason,
   }) async {
+    final requestBody = {
+      'patientId': patientId,
+      'date': dateIso,
+      'reason': reason,
+    };
+    debugPrint('[Booking] POST ${ApiConstants.appointments} request body: $requestBody');
+
     try {
       final response = await _dio.post(
         ApiConstants.appointments,
-        data: {
-          'patientId': patientId,
-          'date': dateIso,
-          'reason': reason,
-        },
+        data: requestBody,
       );
+      debugPrint(
+        '[Booking] POST ${ApiConstants.appointments} raw response: ${response.data}',
+      );
+      debugPrint('[Booking] Booking saved successfully');
       return ApiResponse(
         success: true,
         data: AppointmentModel.fromJson(
@@ -30,7 +38,10 @@ class AppointmentService {
         ),
       );
     } on DioException catch (e) {
-      return ApiResponse(success: false, message: _extractError(e));
+      final message = _extractError(e);
+      debugPrint('[Booking] POST ${ApiConstants.appointments} error: $message');
+      debugPrint('[Booking] Error response data: ${e.response?.data}');
+      return ApiResponse(success: false, message: message);
     }
   }
 

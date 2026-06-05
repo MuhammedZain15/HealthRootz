@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/doctor/features/alert/model/alert_model.dart';
 import 'package:grad_project/doctor/features/alert/models/doctor_alert_item.dart';
 import 'package:grad_project/doctor/features/patients/patient_details_page.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/shared/widgets/custom_button.dart';
 import 'package:intl/intl.dart';
 
@@ -223,14 +225,17 @@ class AlertCard extends StatelessWidget {
 
                     color: AppColors.skyBlue,
                     onPressed: () {
+                      final patientCubit = context.read<PatientCubit>();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              PatientDetailsPage(
-                                patientId: alert.patientId,
-                                preview: alert.toPatientPreview(),
-                              ),
+                          builder: (context) => BlocProvider.value(
+                            value: patientCubit,
+                            child: PatientDetailsPage(
+                              patientId: alert.patientId,
+                              preview: alert.toPatientPreview(),
+                            ),
+                          ),
                         ),
                       );
                     },

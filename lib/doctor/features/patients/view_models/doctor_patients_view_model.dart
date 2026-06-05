@@ -1,19 +1,16 @@
-import 'package:grad_project/core/models/patient_model.dart' as api;
-import 'package:grad_project/core/services/patient_service.dart';
+import 'package:grad_project/patient/features/patient/data/models/patient_model.dart' as new_api;
 import '../model/patient_model.dart';
 import '../models/doctor_patients_list_model.dart';
 import '../models/doctor_patient_detail_model.dart';
 
-/// Business logic for doctor patient list and detail API calls.
+/// Business logic for doctor patient list and detail mapping.
 class DoctorPatientsViewModel {
-  final PatientService _patientService = PatientService();
-
   /// Maps API patient to UI [Patient].
-  Patient mapToUiPatient(api.PatientModel model) {
+  Patient mapToUiPatient(new_api.PatientModel model) {
     return Patient(
-      id: model.id ?? '',
-      name: model.name ?? 'Unknown',
-      age: model.age ?? 0,
+      id: model.id,
+      name: model.name,
+      age: model.age,
       status: formatStatus(model.status),
       heartRate: 0,
       emgReading: 0,
@@ -36,76 +33,28 @@ class DoctorPatientsViewModel {
     return status[0].toUpperCase() + status.substring(1);
   }
 
-  /// GET /api/patients — all patients for the logged-in doctor.
-  Future<(DoctorPatientsListModel, String?)> fetchPatients(
+  /// Process loaded list of patients.
+  DoctorPatientsListModel processPatientsList(
     DoctorPatientsListModel current,
-  ) async {
-    try {
-      final result = await _patientService.getAllPatients();
-
-      if (result.success && result.data != null) {
-        final patients = result.data!.map(mapToUiPatient).toList();
-        return (
-          current.copyWith(
-            patients: patients,
-            isLoading: false,
-            clearError: true,
-          ),
-          null,
-        );
-      }
-
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: result.message ?? 'Failed to load patients',
-        ),
-        result.message,
-      );
-    } catch (e) {
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: 'Error: ${e.toString()}',
-        ),
-        e.toString(),
-      );
-    }
+    List<new_api.PatientModel> apiPatients,
+  ) {
+    final patients = apiPatients.map(mapToUiPatient).toList();
+    return current.copyWith(
+      patients: patients,
+      isLoading: false,
+      clearError: true,
+    );
   }
 
-  /// GET /api/patients/:id — full patient record.
-  Future<(DoctorPatientDetailModel, String?)> fetchPatientById(
+  /// Process loaded single patient details.
+  DoctorPatientDetailModel processPatientDetail(
     DoctorPatientDetailModel current,
-  ) async {
-    try {
-      final result = await _patientService.getPatientById(current.patientId);
-
-      if (result.success && result.data != null) {
-        return (
-          current.copyWith(
-            patient: mapToUiPatient(result.data!),
-            isLoading: false,
-            clearError: true,
-          ),
-          null,
-        );
-      }
-
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: result.message ?? 'Failed to load patient',
-        ),
-        result.message,
-      );
-    } catch (e) {
-      return (
-        current.copyWith(
-          isLoading: false,
-          errorMessage: 'Error: ${e.toString()}',
-        ),
-        e.toString(),
-      );
-    }
+    new_api.PatientModel apiPatient,
+  ) {
+    return current.copyWith(
+      patient: mapToUiPatient(apiPatient),
+      isLoading: false,
+      clearError: true,
+    );
   }
 }

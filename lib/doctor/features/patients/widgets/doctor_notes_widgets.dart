@@ -1,3 +1,8 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/patient/data/models/patient_model.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:grad_project/app_colors.dart';
@@ -70,109 +75,151 @@ class DoctorNoteCard extends StatelessWidget {
   }
 }
 
+List<DoctorNote> doctorNotesFromPatient(
+  List<PatientNoteModel> notes, {
+  required String fallbackDoctorName,
+}) {
+  return notes.map((note) {
+    final colonIndex = note.text.indexOf(': ');
+    final title =
+        colonIndex > 0 ? note.text.substring(0, colonIndex) : 'Note';
+    final content = colonIndex > 0
+        ? note.text.substring(colonIndex + 2)
+        : note.text;
+
+    return DoctorNote(
+      id: note.id.isNotEmpty
+          ? note.id
+          : note.text.hashCode.toString(),
+      title: title,
+      doctorName: note.doctorName ?? fallbackDoctorName,
+      content: content,
+      timestamp: note.createdAt ?? DateTime.now(),
+    );
+  }).toList();
+}
+
 // Doctor Notes Section
 class DoctorNotesSection extends StatefulWidget {
-  const DoctorNotesSection({super.key});
+  final String patientId;
+  const DoctorNotesSection({super.key, required this.patientId});
 
   @override
   State<DoctorNotesSection> createState() => _DoctorNotesSectionState();
 }
 
 class _DoctorNotesSectionState extends State<DoctorNotesSection> {
-  late List<DoctorNote> doctorNotes;
+  final Set<String> _deletedNoteIds = {};
 
   @override
   void initState() {
     super.initState();
-    doctorNotes = [
-      DoctorNote(
-        id: '1',
-        title: 'Initial Consultation',
-        doctorName: 'Dr. Anderson',
-        content:
-            'Patient presented with mild hypertension. Started on Lisinopril 10mg daily. Blood pressure to be monitored weekly.',
-        timestamp: DateTime(2026, 1, 28, 10, 30),
-      ),
-      DoctorNote(
-        id: '2',
-        title: 'Follow-up Visit',
-        doctorName: 'Dr. Anderson',
-        content:
-            'Patient reports feeling better. Blood pressure readings show improvement. Continue current medication regimen.',
-        timestamp: DateTime(2026, 1, 15, 14, 15),
-      ),
-      DoctorNote(
-        id: '3',
-        title: 'Lab Results Review',
-        doctorName: 'Dr. Anderson',
-        content:
-            'Cholesterol levels within normal range. LDL: 95 mg/dL, HDL: 58 mg/dL. No changes needed to current treatment plan.',
-        timestamp: DateTime(2026, 1, 5, 11, 0),
-      ),
-    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadNotes());
+  }
+
+  void _loadNotes() {
+    final cubit = context.read<PatientCubit>();
+    final state = cubit.state;
+    if (state is! PatientLoaded || state.patient.id != widget.patientId) {
+      cubit.fetchPatientById(widget.patientId);
+    }
   }
 
   void _addNote() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         String title = '';
         String content = '';
+        bool isSubmitting = false;
 
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Add Note'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text('Add Note'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) => title = value,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Note Content',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 4,
+                    onChanged: (value) => content = value,
+                  ),
+                  if (isSubmitting) ...[
+                    const SizedBox(height: 16),
+                    const CircularProgressIndicator(),
+                  ]
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
-                onChanged: (value) => title = value,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Note Content',
-                  border: OutlineInputBorder(),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (title.isEmpty || content.isEmpty) return;
+
+                          setDialogState(() => isSubmitting = true);
+
+                          final cubit = this.context.read<PatientCubit>();
+                          await cubit.addDoctorNote(
+                            widget.patientId,
+                            '$title: $content',
+                          );
+
+                          if (!mounted) return;
+
+                          if (cubit.state is PatientError) {
+                            final message =
+                                (cubit.state as PatientError).message;
+                            if (dialogContext.mounted) {
+                              setDialogState(() => isSubmitting = false);
+                            }
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                            return;
+                          }
+
+                          await cubit.fetchPatientById(widget.patientId);
+
+                          if (!mounted) return;
+
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+
+                          final successMessage = cubit.state is PatientActionSuccess
+                              ? (cubit.state as PatientActionSuccess).message
+                              : 'Note added successfully';
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(content: Text(successMessage)),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.darkBlue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Add'),
                 ),
-                maxLines: 4,
-                onChanged: (value) => content = value,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (title.isNotEmpty && content.isNotEmpty) {
-                  setState(() {
-                    doctorNotes.insert(
-                      0,
-                      DoctorNote(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        title: title,
-                        doctorName: 'Dr. Anderson',
-                        content: content,
-                        timestamp: DateTime.now(),
-                      ),
-                    );
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkBlue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Add'),
-            ),
-          ],
+              ],
+            );
+          },
         );
       },
     );
@@ -180,48 +227,69 @@ class _DoctorNotesSectionState extends State<DoctorNotesSection> {
 
   void _deleteNote(String noteId) {
     setState(() {
-      doctorNotes.removeWhere((note) => note.id == noteId);
+      _deletedNoteIds.add(noteId);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final fallbackDoctorName =
+        context.read<AuthCubit>().state.user?.name ?? 'Doctor';
+
+    return BlocBuilder<PatientCubit, PatientState>(
+      buildWhen: (previous, current) {
+        if (current is PatientLoaded) {
+          return current.patient.id == widget.patientId;
+        }
+        return current is PatientError || current is PatientActionSuccess;
+      },
+      builder: (context, state) {
+        final notes = state is PatientLoaded &&
+                state.patient.id == widget.patientId
+            ? doctorNotesFromPatient(
+                state.patient.notes,
+                fallbackDoctorName: fallbackDoctorName,
+              ).where((n) => !_deletedNoteIds.contains(n.id))
+            : const <DoctorNote>[];
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Doctor\'s Notes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Doctor\'s Notes',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _addNote,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Note'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.skyBlue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                  ),
+                ],
               ),
-              ElevatedButton.icon(
-                onPressed: _addNote,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Note'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.skyBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-              ),
+              const SizedBox(height: 16),
+              ...notes.map((note) => DoctorNoteCard(
+                    note: note,
+                    onDelete: () => _deleteNote(note.id),
+                  )),
             ],
           ),
-          const SizedBox(height: 16),
-          ...doctorNotes.map((note) => DoctorNoteCard(
-                note: note,
-                onDelete: () => _deleteNote(note.id),
-              )),
-        ],
-      ),
+        );
+      },
     );
   }
 }

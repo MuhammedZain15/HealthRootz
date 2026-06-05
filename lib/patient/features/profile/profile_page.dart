@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/patient/features/profile/cubit/patient_profile_cubit.dart';
 import 'package:grad_project/patient/features/profile/edit_profile_card.dart';
 import 'package:grad_project/patient/features/profile/models/patient_profile_model.dart';
@@ -21,7 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _profileCubit = PatientProfileCubit(context.read<AuthCubit>());
+    _profileCubit = PatientProfileCubit(context.read<PatientCubit>());
     Future.microtask(_profileCubit.initialize);
   }
 

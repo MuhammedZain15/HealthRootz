@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/patient/features/ai_chat/ai_sessions_screen.dart';
 import 'package:grad_project/patient/features/chat/chat_view.dart';
 import 'package:grad_project/patient/layout/patient_widgets.dart';
 
@@ -42,10 +43,11 @@ void showActionBottomSheet(BuildContext context) {
               icon: Icons.smart_toy,
               text: 'Chat with AI',
               onTap: () {
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChatView(isDoctorChat: false),
+                    builder: (context) => const AiSessionsScreen(),
                   ),
                 );
               },

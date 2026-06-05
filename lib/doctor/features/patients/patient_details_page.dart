@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/doctor/features/patients/cubit/doctor_patient_detail_cubit.dart';
 import 'package:grad_project/doctor/features/patients/models/doctor_patient_detail_model.dart';
 import 'package:grad_project/doctor/features/patients/widgets/doctor_notes_widgets.dart';
 import 'package:grad_project/doctor/features/patients/widgets/patient_info_widgets.dart';
 import 'package:grad_project/doctor/features/patients/widgets/vital_signs_widgets.dart';
 import 'package:grad_project/shared/widgets/custom_button.dart';
+import 'package:grad_project/doctor/features/chat/doctor_chat_session.dart';
+import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
+import 'package:grad_project/doctor/features/chat/views/chat_detail_page.dart';
 import 'model/patient_model.dart';
 
 import 'widgets/vital_signs_chart.dart';
@@ -16,11 +20,7 @@ class PatientDetailsPage extends StatefulWidget {
   final String patientId;
   final Patient? preview;
 
-  const PatientDetailsPage({
-    super.key,
-    required this.patientId,
-    this.preview,
-  });
+  const PatientDetailsPage({super.key, required this.patientId, this.preview});
 
   @override
   State<PatientDetailsPage> createState() => _PatientDetailsPageState();
@@ -33,6 +33,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   void initState() {
     super.initState();
     _cubit = DoctorPatientDetailCubit(
+      patientCubit: context.read<PatientCubit>(),
       patientId: widget.patientId,
       preview: widget.preview,
     );
@@ -159,16 +160,19 @@ class _PatientDetailsBody extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.skyBlue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.chat_bubble,
-                      color: Colors.white,
-                      size: 20,
+                  GestureDetector(
+                    onTap: () => _openPatientChat(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.skyBlue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -190,7 +194,10 @@ class _PatientDetailsBody extends StatelessWidget {
                           style: TextStyle(color: Colors.orange.shade900),
                         ),
                       ),
-                      TextButton(onPressed: onRetry, child: const Text('Retry')),
+                      TextButton(
+                        onPressed: onRetry,
+                        child: const Text('Retry'),
+                      ),
                     ],
                   ),
                 ),
@@ -202,6 +209,7 @@ class _PatientDetailsBody extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _buildPatientContent(
+                      context,
                       patient,
                       heartRateData,
                       bloodPressureData,
@@ -209,11 +217,13 @@ class _PatientDetailsBody extends StatelessWidget {
                   ),
                 ),
                 tablet: _buildTabletDesktopLayout(
+                  context,
                   patient,
                   heartRateData,
                   bloodPressureData,
                 ),
                 desktop: _buildTabletDesktopLayout(
+                  context,
                   patient,
                   heartRateData,
                   bloodPressureData,
@@ -227,6 +237,7 @@ class _PatientDetailsBody extends StatelessWidget {
   }
 
   Widget _buildTabletDesktopLayout(
+    BuildContext context,
     Patient patient,
     List<double> heartRateData,
     List<double> bloodPressureData,
@@ -276,9 +287,9 @@ class _PatientDetailsBody extends StatelessWidget {
                     const SizedBox(height: 20),
                     const RecentActivitySection(),
                     const SizedBox(height: 20),
-                    const DoctorNotesSection(),
+                    DoctorNotesSection(patientId: patient.id),
                     const SizedBox(height: 20),
-                    _buildActionButtons(),
+                    _buildActionButtons(context),
                   ],
                 ),
               ),
@@ -290,6 +301,7 @@ class _PatientDetailsBody extends StatelessWidget {
   }
 
   List<Widget> _buildPatientContent(
+    BuildContext context,
     Patient patient,
     List<double> heartRateData,
     List<double> bloodPressureData,
@@ -319,19 +331,40 @@ class _PatientDetailsBody extends StatelessWidget {
       const SizedBox(height: 20),
       const RecentActivitySection(),
       const SizedBox(height: 20),
-      const DoctorNotesSection(),
+      DoctorNotesSection(patientId: patient.id),
       const SizedBox(height: 20),
-      _buildActionButtons(),
+      _buildActionButtons(context),
     ];
   }
 
-  Widget _buildActionButtons() {
+  void _openPatientChat(BuildContext context) {
+    final patientCubit = context.read<PatientCubit>();
+    DoctorChatSession.activePatientId = patient.id;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: patientCubit,
+          child: ChatDetailPage(
+            user: ChatUser(
+              id: patient.id,
+              name: patient.name,
+              lastMessage: '',
+              time: '',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: CustomButton(
             text: "Chat",
-            onPressed: () {},
+            onPressed: () => _openPatientChat(context),
             color: AppColors.skyBlue,
           ),
         ),

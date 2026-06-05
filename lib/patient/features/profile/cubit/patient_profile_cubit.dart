@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_state.dart';
 import '../models/patient_profile_model.dart';
 import '../view_models/patient_profile_view_model.dart';
 
@@ -7,19 +9,46 @@ import '../view_models/patient_profile_view_model.dart';
 /// Manages patient profile state and delegates business logic to ViewModel
 class PatientProfileCubit extends Cubit<PatientProfileModel> {
   final PatientProfileViewModel _viewModel = PatientProfileViewModel();
-  final AuthCubit _authCubit;
+  final PatientCubit _patientCubit;
+  StreamSubscription? _subscription;
+  PatientProfileCubit(this._patientCubit) : super(PatientProfileModel.initial()) {
+    _subscription = _patientCubit.stream.listen(_onPatientStateChanged);
+  }
 
-  PatientProfileCubit(this._authCubit) : super(PatientProfileModel.initial());
+  @override
+  Future<void> close() {
+    _subscription?.cancel();
+    return super.close();
+  }
+
+  void _onPatientStateChanged(PatientState patientState) {
+    if (patientState is PatientLoaded) {
+      final profile = _viewModel.modelFromPatient(patientState.patient);
+      if (state.isUpdating) {
+        emit(profile.copyWith(isUpdating: false, successMessage: 'Profile updated successfully!'));
+        Future.delayed(const Duration(seconds: 2), () {
+          if (!isClosed) emit(state.copyWith(successMessage: null));
+        });
+      } else {
+        emit(profile.copyWith(isLoading: false));
+      }
+    } else if (patientState is PatientError) {
+      if (state.isUpdating) {
+        emit(state.copyWith(isUpdating: false, errorMessage: patientState.message));
+      } else {
+        emit(state.copyWith(isLoading: false, errorMessage: patientState.message));
+      }
+    }
+  }
 
   // ─── Initialization ────────────────────────────────────────────
 
   /// Initialize and fetch profile
   Future<void> initialize() async {
-    final user = _authCubit.user;
-    final profile = _viewModel.modelFromUser(user);
-    emit(profile);
-
-    // Then fetch fresh data
+    if (_patientCubit.state is PatientLoaded) {
+      final patient = (_patientCubit.state as PatientLoaded).patient;
+      emit(_viewModel.modelFromPatient(patient));
+    }
     await fetchProfile();
   }
 
@@ -28,14 +57,7 @@ class PatientProfileCubit extends Cubit<PatientProfileModel> {
   /// Fetch profile from backend
   Future<void> fetchProfile() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
-
-    final (profile, error) = await _viewModel.fetchProfile();
-
-    if (error != null) {
-      emit(profile.copyWith(isLoading: false, errorMessage: error));
-    } else {
-      emit(profile.copyWith(isLoading: false));
-    }
+    await _patientCubit.fetchMe();
   }
 
   // ─── Update Profile ───────────────────────────────────────────
@@ -49,9 +71,20 @@ class PatientProfileCubit extends Cubit<PatientProfileModel> {
     required String medicalHistory,
     required String address,
   }) async {
+    final validation = _viewModel.validateProfileData(
+      name: name,
+      phone: phone,
+      age: age,
+    );
+
+    if (validation != null) {
+      emit(state.copyWith(errorMessage: validation));
+      return;
+    }
+
     emit(state.copyWith(isUpdating: true, errorMessage: null));
 
-    final (updatedProfile, error) = await _viewModel.updateProfile(
+    final updates = _viewModel.createUpdateMap(
       name: name,
       phone: phone,
       age: age,
@@ -60,20 +93,11 @@ class PatientProfileCubit extends Cubit<PatientProfileModel> {
       address: address,
     );
 
-    if (error != null) {
-      emit(state.copyWith(isUpdating: false, errorMessage: error));
+    if (state.id != null) {
+      await _patientCubit.updatePatient(state.id!, updates);
+      await _patientCubit.fetchMe();
     } else {
-      emit(
-        updatedProfile.copyWith(
-          isUpdating: false,
-          successMessage: 'Profile updated successfully!',
-        ),
-      );
-      await _authCubit.fetchProfile();
-
-      await Future.delayed(const Duration(seconds: 2));
-      if (isClosed) return;
-      emit(updatedProfile.copyWith(successMessage: null));
+      emit(state.copyWith(isUpdating: false, errorMessage: 'Patient ID missing'));
     }
   }
 

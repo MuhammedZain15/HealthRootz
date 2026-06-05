@@ -8,17 +8,33 @@ import 'features/chat/doctor_chat_page.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'features/home/doctor_home_page.dart';
 import 'features/profile/doctor_profile_page.dart';
 
-class DoctorAppLayout extends StatefulWidget {
+class DoctorAppLayout extends StatelessWidget {
   const DoctorAppLayout({super.key});
 
   @override
-  State<DoctorAppLayout> createState() => _AppLayoutState();
+  Widget build(BuildContext context) {
+    return BlocProvider<PatientCubit>(
+      create: (context) => PatientCubit(
+        PatientRepositoryImpl(),
+      ),
+      child: const _DoctorAppLayoutContent(),
+    );
+  }
 }
 
-class _AppLayoutState extends State<DoctorAppLayout> {
+class _DoctorAppLayoutContent extends StatefulWidget {
+  const _DoctorAppLayoutContent();
+
+  @override
+  State<_DoctorAppLayoutContent> createState() => _AppLayoutState();
+}
+
+class _AppLayoutState extends State<_DoctorAppLayoutContent> {
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {

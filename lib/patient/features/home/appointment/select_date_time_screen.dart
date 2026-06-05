@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 import 'package:grad_project/patient/features/home/appointment/confirm_booking_screen.dart';
 import 'package:grad_project/patient/features/home/appointment/cubit/patient_booking_cubit.dart';
 import 'package:grad_project/patient/features/home/appointment/models/patient_booking_model.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 
 import 'appointment_widgets.dart';
 
@@ -37,66 +39,70 @@ class SelectDateTimeScreen extends StatelessWidget {
                       children: [
                         AppointmentHeader(
                           title: 'Book Appointment',
-                          subtitle: 'Select date & time',
+                          subtitle: (state.doctorName ?? '').isNotEmpty
+                              ? 'Select date & time'
+                              : 'Step 1 — Select date & time',
                           onBack: () => Navigator.pop(context),
                         ),
-                        const StepProgressBar(
-                          currentStep: 2,
-                          totalSteps: 2,
+                        StepProgressBar(
+                          currentStep: (state.doctorName ?? '').isNotEmpty ? 2 : 1,
+                          totalSteps: (state.doctorName ?? '').isNotEmpty ? 2 : 3,
                         ),
-                        const SizedBox(height: 32),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor:
-                                    AppColors.skyBlue.withValues(alpha: 0.1),
-                                child: Text(
-                                  _initial(state.doctorName),
-                                  style: TextStyle(
-                                    color: AppColors.skyBlue,
-                                    fontWeight: FontWeight.bold,
+                        if ((state.doctorName ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 32),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor:
+                                      AppColors.skyBlue.withValues(alpha: 0.1),
+                                  child: Text(
+                                    _initial(state.doctorName),
+                                    style: TextStyle(
+                                      color: AppColors.skyBlue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.doctorName ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1E293B),
+                                const SizedBox(width: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      state.doctorName ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B),
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    state.specialty ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF64748B),
+                                    Text(
+                                      state.specialty ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                         const SizedBox(height: 32),
                         DateSelector(
                           days: dayMaps,
@@ -129,11 +135,20 @@ class SelectDateTimeScreen extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: state.canContinue
                           ? () {
+                              final patientCubit = context.read<PatientCubit>();
+                              final appointmentsCubit =
+                                  context.read<PatientAppointmentsCubit>();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: cubit,
+                                  builder: (_) => MultiBlocProvider(
+                                    providers: [
+                                      BlocProvider.value(value: cubit),
+                                      BlocProvider.value(value: patientCubit),
+                                      BlocProvider.value(
+                                        value: appointmentsCubit,
+                                      ),
+                                    ],
                                     child: const ConfirmBookingScreen(),
                                   ),
                                 ),
