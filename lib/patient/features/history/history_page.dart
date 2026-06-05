@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/models/appointment_model.dart';
+import 'package:grad_project/core/models/vital_model.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_state.dart';
+import 'package:grad_project/patient/features/history/cubit/patient_vitals_cubit.dart';
+import 'package:grad_project/patient/features/history/cubit/patient_vitals_state.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
 import 'package:intl/intl.dart';
 import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/core/models/report_model.dart';
 import 'package:grad_project/core/services/report_service.dart';
-import './data/measurement_model.dart';
 import './presentation/pages/report_detail_page.dart';
 import './presentation/widgets/history_summary_cards.dart';
 import './presentation/widgets/history_list_item.dart';
 import './presentation/widgets/appointment_history_list_item.dart';
-import './presentation/pages/measurement_details_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -32,6 +33,8 @@ class _HistoryPageState extends State<HistoryPage> {
   bool _isReportsLoading = false;
   String? _reportsError;
   bool _reportsFetched = false;
+  
+  late final PatientVitalsCubit _vitalsCubit;
 
   // ── Lazy-load reports only when tab is first opened ───────────────────────
   void _onTabChanged(int index) {
@@ -64,7 +67,14 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void initState() {
     super.initState();
+    _vitalsCubit = PatientVitalsCubit()..loadVitals();
     context.read<PatientAppointmentsCubit>().loadAppointments();
+  }
+
+  @override
+  void dispose() {
+    _vitalsCubit.close();
+    super.dispose();
   }
 
   @override
@@ -72,9 +82,13 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: ValueListenableBuilder<List<MeasurementRecord>>(
-          valueListenable: MeasurementStore.records,
-          builder: (context, records, _) {
+        child: BlocBuilder<PatientVitalsCubit, PatientVitalsState>(
+          bloc: _vitalsCubit,
+          builder: (context, vitalsState) {
+            final vitals = vitalsState is PatientVitalsLoaded ? vitalsState.vitals : <VitalModel>[];
+            final isVitalsLoading = vitalsState is PatientVitalsLoading;
+            final vitalsError = vitalsState is PatientVitalsError ? vitalsState.message : null;
+
             return BlocBuilder<PatientAppointmentsCubit, PatientAppointmentsState>(
               builder: (context, appointmentsState) {
                 final appointments = appointmentsState is PatientAppointmentsLoaded
@@ -116,7 +130,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       const SizedBox(height: 24),
                       ResponsiveLayout(
                         mobile: HistorySummaryCards(
-                          readingsCount: records.length,
+                          readingsCount: vitals.length,
                           visitsCount: visitsCount,
                           thisWeekCount: thisWeekCount,
                         ),
@@ -124,7 +138,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           children: [
                             Expanded(
                               child: HistorySummaryCards(
-                                readingsCount: records.length,
+                                readingsCount: vitals.length,
                                 visitsCount: visitsCount,
                                 thisWeekCount: thisWeekCount,
                               ),
@@ -138,27 +152,30 @@ class _HistoryPageState extends State<HistoryPage> {
                         onTabChanged: _onTabChanged,
                       ),
                       const SizedBox(height: 20),
-                      if (isLoadingAppointments &&
-                          _selectedFilterIndex != 1 &&
-                          appointments.isEmpty)
+                      if ((isLoadingAppointments && _selectedFilterIndex != 1 && appointments.isEmpty) ||
+                          (isVitalsLoading && _selectedFilterIndex != 2 && vitals.isEmpty))
                         const Expanded(
                           child: Center(child: CircularProgressIndicator()),
                         )
-                      else if (appointmentsError != null &&
-                          _selectedFilterIndex != 1)
+                      else if (appointmentsError != null && _selectedFilterIndex != 1)
                         Expanded(
                           child: _buildErrorState(
                             appointmentsError,
-                            onRetry: () => context
-                                .read<PatientAppointmentsCubit>()
-                                .loadAppointments(),
+                            onRetry: () => context.read<PatientAppointmentsCubit>().loadAppointments(),
+                          ),
+                        )
+                      else if (vitalsError != null && _selectedFilterIndex != 2)
+                        Expanded(
+                          child: _buildErrorState(
+                            vitalsError,
+                            onRetry: () => _vitalsCubit.loadVitals(),
                           ),
                         )
                       else
                         Expanded(
                           child: _buildFilteredContent(
                             context,
-                            records: records,
+                            vitals: vitals,
                             appointments: appointments,
                           ),
                         ),
@@ -175,15 +192,15 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildFilteredContent(
     BuildContext context, {
-    required List<MeasurementRecord> records,
+    required List<VitalModel> vitals,
     required List<AppointmentModel> appointments,
   }) {
     if (_selectedFilterIndex == 1) {
-      if (records.isEmpty) return _buildEmptyState('No sensor readings yet');
+      if (vitals.isEmpty) return _buildEmptyState('No sensor readings yet');
       return ResponsiveLayout(
-        mobile: _buildSensorListView(records),
-        tablet: _buildSensorGridView(records, 2),
-        desktop: _buildSensorGridView(records, 3),
+        mobile: _buildSensorListView(vitals),
+        tablet: _buildSensorGridView(vitals, 2),
+        desktop: _buildSensorGridView(vitals, 3),
       );
     }
 
@@ -234,7 +251,7 @@ class _HistoryPageState extends State<HistoryPage> {
     }
 
     // All: appointments first (API), then sensor readings
-    if (appointments.isEmpty && records.isEmpty) {
+    if (appointments.isEmpty && vitals.isEmpty) {
       return _buildEmptyState('No history yet');
     }
 
@@ -249,12 +266,12 @@ class _HistoryPageState extends State<HistoryPage> {
               child: AppointmentHistoryListItem(appointment: a),
             ),
           ),
-          ...records.map(
-            (r) => Padding(
+          ...vitals.map(
+            (v) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: HistoryListItem(
-                record: r,
-                onTap: () => _navigateToDetails(context, r),
+                vital: v,
+                onTap: () {}, // Detail page removed for snapshot view
               ),
             ),
           ),
@@ -265,23 +282,23 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildSensorListView(List<MeasurementRecord> records) {
+  Widget _buildSensorListView(List<VitalModel> vitals) {
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
-      itemCount: records.length,
+      itemCount: vitals.length,
       padding: const EdgeInsets.only(bottom: 20),
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final record = records[index];
+        final vital = vitals[index];
         return HistoryListItem(
-          record: record,
-          onTap: () => _navigateToDetails(context, record),
+          vital: vital,
+          onTap: () {}, // Detail page removed for snapshot view
         );
       },
     );
   }
 
-  Widget _buildSensorGridView(List<MeasurementRecord> records, int crossAxisCount) {
+  Widget _buildSensorGridView(List<VitalModel> vitals, int crossAxisCount) {
     return GridView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 20),
@@ -289,14 +306,14 @@ class _HistoryPageState extends State<HistoryPage> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 3.5,
+        childAspectRatio: 2.0, // adjusted for the new layout
       ),
-      itemCount: records.length,
+      itemCount: vitals.length,
       itemBuilder: (context, index) {
-        final record = records[index];
+        final vital = vitals[index];
         return HistoryListItem(
-          record: record,
-          onTap: () => _navigateToDetails(context, record),
+          vital: vital,
+          onTap: () {},
         );
       },
     );
@@ -331,13 +348,6 @@ class _HistoryPageState extends State<HistoryPage> {
       itemBuilder: (context, index) {
         return AppointmentHistoryListItem(appointment: appointments[index]);
       },
-    );
-  }
-
-  void _navigateToDetails(BuildContext context, MeasurementRecord record) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => MeasurementDetailsPage(record: record)),
     );
   }
 

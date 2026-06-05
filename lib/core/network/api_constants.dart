@@ -42,4 +42,8 @@ class ApiConstants {
 
   // ─── Dashboard ─────────────────────────────────────────────────────
   static const String dashboardSummary = '/dashboard/stats';
+
+  // ─── Vitals ────────────────────────────────────────────────────────
+  static const String vitals = '/vitals';
+  static String vitalById(String id) => '/vitals/$id';
 }

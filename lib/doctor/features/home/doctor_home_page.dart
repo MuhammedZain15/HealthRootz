@@ -161,7 +161,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                       ],
                                     ),
                                     SizedBox(height: screenHeight * 0.03),
-                                    const PatientOverviewChart(),
+                                    PatientOverviewChart(),
                                     SizedBox(height: screenHeight * 0.03),
                                     const AnomalyChart(),
                                     SizedBox(height: screenHeight * 0.03),

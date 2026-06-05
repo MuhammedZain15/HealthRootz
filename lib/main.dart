@@ -14,7 +14,6 @@ Future<void> main() async {
   await ApiClient.instance.init();
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

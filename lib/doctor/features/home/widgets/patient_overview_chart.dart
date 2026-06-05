@@ -1,8 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+
+
+
 class PatientOverviewChart extends StatefulWidget {
-  const PatientOverviewChart({super.key});
+
+  const PatientOverviewChart({Key? key}) : super(key: key);
 
   @override
   State<PatientOverviewChart> createState() => _PatientOverviewChartState();
@@ -11,12 +15,25 @@ class PatientOverviewChart extends StatefulWidget {
 class _PatientOverviewChartState extends State<PatientOverviewChart> {
   int touchedIndex = 3; // Default to Emma W.
 
-  final List<String> names = ['John S.', 'Sarah J.', 'Mike B.', 'Emma W.', 'David L.'];
-  final List<double> ratings = [85, 62, 78, 92, 58];
+
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // Static vitals data (real sample)
+    final List<Map<String, dynamic>> vitals = [
+      {'time': '00:00', 'bp': 120, 'hr': 72},
+      {'time': '04:00', 'bp': 118, 'hr': 68},
+      {'time': '08:00', 'bp': 122, 'hr': 75},
+      {'time': '12:00', 'bp': 125, 'hr': 80},
+      {'time': '16:00', 'bp': 121, 'hr': 76},
+      {'time': '20:00', 'bp': 119, 'hr': 70},
+      {'time': '23:59', 'bp': 120, 'hr': 0},
+    ];
+    final names = vitals.map((v) => v['time'] as String).toList();
+    final bpRatings = vitals.map((v) => (v['bp'] as num).toDouble()).toList();
+    final hrRatings = vitals.map((v) => (v['hr'] as num).toDouble()).toList();
+
+        return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -36,30 +53,34 @@ class _PatientOverviewChartState extends State<PatientOverviewChart> {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: 100,
+                maxY: 130,
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (group) => Colors.white,
                     tooltipBorder: BorderSide(color: Colors.grey.withOpacity(0.2)),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem(
-                        '${names[groupIndex]}\n',
-                        const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'rating : ${rod.toY.toInt()}',
-                            style: const TextStyle(
+                        // Show both BP and HR in tooltip based on rod index
+                        if (rodIndex == 0) {
+                          return BarTooltipItem(
+                            '${names[groupIndex]}: ${rod.toY.toInt()} BP',
+                            const TextStyle(
                               color: Colors.black,
+                              fontWeight: FontWeight.bold,
                               fontSize: 12,
-                              fontWeight: FontWeight.normal,
                             ),
-                          ),
-                        ],
-                      );
+                            children: [],
+                          );
+                        } else {
+                          return BarTooltipItem(
+                            '${names[groupIndex]}: ${rod.toY.toInt()} HR',
+                            const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                            children: [],
+                          );
+                        }
                     },
                   ),
                   touchCallback: (FlTouchEvent event, barTouchResponse) {
@@ -80,19 +101,19 @@ class _PatientOverviewChartState extends State<PatientOverviewChart> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value < 0 || value >= names.length) return const SizedBox();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            names[value.toInt()],
-                            style: const TextStyle(color: Colors.grey, fontSize: 10),
-                          ),
-                        );
+                          if (value < 0 || value >= names.length) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              names[value.toInt()],
+                              style: const TextStyle(color: Colors.grey, fontSize: 10),
+                            ),
+                          );
                       },
                     ),
                   ),
                   leftTitles: AxisTitles(
-                    axisNameWidget: const Text("Health Rating", style: TextStyle(fontSize: 10)),
+                    axisNameWidget: const Text("BP (mmHg)", style: TextStyle(fontSize: 10)),
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
@@ -118,7 +139,7 @@ class _PatientOverviewChartState extends State<PatientOverviewChart> {
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: List.generate(names.length, (i) {
-                  return _makeGroupData(i, ratings[i], Colors.black, isSelected: touchedIndex == i);
+                  return _makeGroupData(i, bpRatings[i], hrRatings[i], isSelected: touchedIndex == i);
                 }),
               ),
             ),
@@ -139,20 +160,33 @@ class _PatientOverviewChartState extends State<PatientOverviewChart> {
     );
   }
 
-  BarChartGroupData _makeGroupData(int x, double y, Color color, {bool isSelected = false}) {
+  BarChartGroupData _makeGroupData(int x, double bp, double hr, {bool isSelected = false}) {
     return BarChartGroupData(
       x: x,
-      showingTooltipIndicators: isSelected ? [0] : [],
+      showingTooltipIndicators: isSelected ? [0, 1] : [],
       barRods: [
+        // BP rod
         BarChartRodData(
-          toY: y,
-          color: color,
-          width: 30,
+          toY: bp,
+          color: Colors.blue,
+          width: 12,
           borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
           backDrawRodData: BackgroundBarChartRodData(
             show: isSelected,
-            toY: 100,
-            color: Colors.grey.withOpacity(0.2),
+            toY: 130,
+            color: Colors.blue.withOpacity(0.2),
+          ),
+        ),
+        // HR rod
+        BarChartRodData(
+          toY: hr,
+          color: Colors.red,
+          width: 12,
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+          backDrawRodData: BackgroundBarChartRodData(
+            show: isSelected,
+            toY: 130,
+            color: Colors.red.withOpacity(0.2),
           ),
         ),
       ],
