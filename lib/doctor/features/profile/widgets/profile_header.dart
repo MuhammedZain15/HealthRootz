@@ -68,21 +68,6 @@ class ProfileHeader extends StatelessWidget {
           const SizedBox(height: 8),
           _buildInfoRow(Icons.location_on_outlined, address),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.logout, size: 20),
-              label: const Text("Logout", style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-            ),
-          ),
         ],
       ),
     );

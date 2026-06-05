@@ -63,15 +63,51 @@ class _AddPatientPageState extends State<AddPatientPage> {
     if (!mounted) return;
 
     if (success && patient != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Patient ${patient.name} created successfully',
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          backgroundColor: AppColors.skyBlue,
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: 8),
+              Text('Patient Created'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Name: ${patient.name}'),
+              const SizedBox(height: 8),
+              Text('Email: ${patient.email}'),
+              const SizedBox(height: 8),
+              Text('Password: ${patient.password ?? "Not provided by server"}'),
+              const SizedBox(height: 16),
+              const Text(
+                'Please share these credentials with the patient.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              child: const Text('Close'),
+            ),
+          ],
         ),
       );
-      Navigator.popUntil(context, (route) => route.isFirst);
     } else if (_cubit.state.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

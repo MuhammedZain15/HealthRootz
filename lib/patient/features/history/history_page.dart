@@ -4,6 +4,10 @@ import 'package:grad_project/core/models/appointment_model.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_state.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
+import 'package:intl/intl.dart';
+import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/core/models/report_model.dart';
+import 'package:grad_project/core/services/report_service.dart';
 import './data/measurement_model.dart';
 import './presentation/pages/report_detail_page.dart';
 import './presentation/widgets/history_summary_cards.dart';
@@ -129,11 +133,9 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      HistoryFilterTabs(
+                      _HistoryFilterTabsWithReports(
                         selectedIndex: _selectedFilterIndex,
-                        onTabChanged: (index) {
-                          setState(() => _selectedFilterIndex = index);
-                        },
+                        onTabChanged: _onTabChanged,
                       ),
                       const SizedBox(height: 20),
                       if (isLoadingAppointments &&
@@ -193,6 +195,41 @@ class _HistoryPageState extends State<HistoryPage> {
         mobile: _buildAppointmentsListView(appointments),
         tablet: _buildAppointmentsGridView(appointments, 2),
         desktop: _buildAppointmentsGridView(appointments, 3),
+      );
+    }
+
+    if (_selectedFilterIndex == 3) {
+      if (_isReportsLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (_reportsError != null) {
+        return _ReportsErrorView(
+          message: _reportsError!,
+          onRetry: _loadReports,
+        );
+      }
+      if (_reports.isEmpty) {
+        return _ReportsEmptyView();
+      }
+      return ListView.separated(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 20),
+        itemCount: _reports.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final report = _reports[index];
+          return _ReportCard(
+            report: report,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReportDetailPage(report: report),
+                ),
+              );
+            },
+          );
+        },
       );
     }
 

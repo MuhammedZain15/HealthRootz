@@ -31,10 +31,17 @@ class PatientResponseParser {
         return root;
       }
 
+      Map<String, dynamic>? injectPasswords(Map<String, dynamic> map) {
+        if (root.containsKey('password')) map['password'] = root['password'];
+        if (root.containsKey('generatedPassword')) map['generatedPassword'] = root['generatedPassword'];
+        if (root.containsKey('autoPassword')) map['autoPassword'] = root['autoPassword'];
+        return map;
+      }
+
       for (final key in _nestedKeys) {
         final nested = root[key];
         final resolved = _mapIfPatient(nested);
-        if (resolved != null) return resolved;
+        if (resolved != null) return injectPasswords(resolved);
       }
 
       // e.g. { "success": true, "data": null, "patient": { ... } }
@@ -42,7 +49,7 @@ class PatientResponseParser {
         for (final key in _nestedKeys.skip(1)) {
           final nested = root[key];
           final resolved = _mapIfPatient(nested);
-          if (resolved != null) return resolved;
+          if (resolved != null) return injectPasswords(resolved);
         }
       }
 
@@ -53,7 +60,7 @@ class PatientResponseParser {
         ..remove('status')
         ..remove('data');
       if (_looksLikePatient(stripped)) {
-        return stripped;
+        return injectPasswords(stripped);
       }
 
       return root;

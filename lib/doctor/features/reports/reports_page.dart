@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:grad_project/core/models/report_model.dart';
 import 'package:grad_project/core/services/report_service.dart';
 import 'package:grad_project/doctor/features/patients/model/patient_model.dart';
-import 'package:grad_project/doctor/features/patients/models/doctor_patients_list_model.dart';
 import 'package:grad_project/doctor/features/patients/view_models/doctor_patients_view_model.dart';
 import 'package:grad_project/doctor/features/reports/model/report_data.dart';
 import 'package:grad_project/doctor/features/reports/services/pdf_generator_service.dart';
 import 'package:grad_project/doctor/features/reports/widgets/report_configuration_card.dart';
 import 'package:grad_project/doctor/features/reports/widgets/report_list_tile.dart';
 import 'package:grad_project/doctor/features/reports/widgets/report_preview_card.dart';
+import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -65,10 +65,18 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Future<void> _fetchAndSetPatients() async {
-    final (model, _) = await _patientsVm.fetchPatients(
-      DoctorPatientsListModel.initial(),
+    final repository = PatientRepositoryImpl();
+    final result = await repository.getPatients();
+    result.fold(
+      (failure) => throw Exception(failure.message),
+      (apiPatients) {
+        if (mounted) {
+          setState(() {
+            _patients = apiPatients.map((p) => _patientsVm.mapToUiPatient(p)).toList();
+          });
+        }
+      },
     );
-    if (mounted) setState(() => _patients = model.patients);
   }
 
   Future<void> _loadReports() async {

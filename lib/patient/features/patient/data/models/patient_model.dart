@@ -56,6 +56,7 @@ class PatientModel {
   final String condition;
   final String status;
   final List<PatientNoteModel> notes;
+  final String? password;
 
   const PatientModel({
     required this.id,
@@ -68,6 +69,7 @@ class PatientModel {
     required this.condition,
     required this.status,
     this.notes = const [],
+    this.password,
   });
 
   // ─── Deserialization ───────────────────────────────────────────────
@@ -87,6 +89,7 @@ class PatientModel {
       condition: _parseString(data['condition']),
       status: _parseString(data['status']),
       notes: _parseNotes(data['notes'] ?? data['doctorNotes']),
+      password: _parseOptionalString(data['password'] ?? data['generatedPassword']),
     );
   }
 
@@ -118,6 +121,7 @@ class PatientModel {
         if (medicalHistory != null) 'medicalHistory': medicalHistory,
         'condition': condition,
         'status': status,
+        if (password != null) 'password': password,
       };
 
   // ─── Copy With ─────────────────────────────────────────────────────
@@ -133,6 +137,7 @@ class PatientModel {
     String? condition,
     String? status,
     List<PatientNoteModel>? notes,
+    String? password,
   }) {
     return PatientModel(
       id: id ?? this.id,
@@ -145,6 +150,7 @@ class PatientModel {
       condition: condition ?? this.condition,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      password: password ?? this.password,
     );
   }
 
@@ -169,5 +175,5 @@ class PatientModel {
 
   @override
   String toString() =>
-      'PatientModel(id: $id, name: $name, email: $email, status: $status)';
+      'PatientModel(id: $id, name: $name, email: $email, status: $status, password: $password)';
 }

@@ -12,6 +12,10 @@ import 'package:grad_project/doctor/features/chat/doctor_chat_session.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
 import 'package:grad_project/doctor/features/chat/views/chat_detail_page.dart';
 import 'model/patient_model.dart';
+import 'package:grad_project/core/cubit/auth_cubit.dart';
+import 'package:grad_project/patient/features/home/appointment/select_date_time_screen.dart';
+import 'package:grad_project/patient/features/home/appointment/cubit/patient_booking_cubit.dart';
+import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 
 import 'widgets/vital_signs_chart.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
@@ -358,6 +362,37 @@ class _PatientDetailsBody extends StatelessWidget {
     );
   }
 
+  void _scheduleVisit(BuildContext context) {
+    final authCubit = context.read<AuthCubit>();
+    final user = authCubit.state.user;
+    final doctorName = user?.name ?? 'Doctor';
+    final specialty = user?.specialty ?? 'General';
+    final patientCubit = context.read<PatientCubit>();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider<PatientBookingCubit>(
+              create: (_) => PatientBookingCubit(patientCubit)
+                ..initializeDoctor(
+                  doctorName: doctorName,
+                  specialty: specialty,
+                  patientId: patient.id,
+                ),
+            ),
+            BlocProvider.value(value: patientCubit),
+            BlocProvider<PatientAppointmentsCubit>(
+              create: (_) => PatientAppointmentsCubit(),
+            ),
+          ],
+          child: const SelectDateTimeScreen(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
@@ -372,7 +407,7 @@ class _PatientDetailsBody extends StatelessWidget {
         Expanded(
           child: CustomButton(
             text: "Schedule Visit",
-            onPressed: () {},
+            onPressed: () => _scheduleVisit(context),
             filled: false,
             color: AppColors.skyBlue,
           ),

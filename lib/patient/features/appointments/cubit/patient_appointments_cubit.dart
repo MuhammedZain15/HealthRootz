@@ -31,6 +31,24 @@ class PatientAppointmentsCubit extends Cubit<PatientAppointmentsState> {
     }
   }
 
+  Future<void> approveAppointment(String id) async {
+    final result = await _appointmentService.updateAppointment(id, {'status': 'approved'});
+    if (result.success) {
+      await loadAppointments();
+    } else {
+      emit(PatientAppointmentsError(result.message ?? 'Failed to approve appointment'));
+    }
+  }
+
+  Future<void> declineAppointment(String id) async {
+    final result = await _appointmentService.updateAppointment(id, {'status': 'cancelled'});
+    if (result.success) {
+      await loadAppointments();
+    } else {
+      emit(PatientAppointmentsError(result.message ?? 'Failed to decline appointment'));
+    }
+  }
+
   int get visitsCount {
     final current = state;
     if (current is PatientAppointmentsLoaded) {
