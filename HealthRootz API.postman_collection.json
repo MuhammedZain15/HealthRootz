@@ -1,0 +1,1421 @@
+{
+  "info": {
+    "_postman_id": "576d6999-6825-4d50-96b5-2568e1d99db7",
+    "name": "HealthRootz API",
+    "description": "Complete collection of endpoints with automated variables for Bearer Token and Reset Token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49414524",
+    "_collection_link": "https://go.postman.co/collection/49414524-576d6999-6825-4d50-96b5-2568e1d99db7?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1. Admin",
+      "item": [
+        {
+          "name": "Get Doctors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/admin/doctors",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "doctors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. New Admin Created\",\n  \"email\": \"admin.doc@test.com\",\n  \"password\": \"password123\",\n  \"specialty\": \"Cardiology\",\n  \"licenseNumber\": \"LIC-ADMIN-1234\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/admin/doctors",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "doctors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Doctor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/admin/doctors/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "doctors",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/admin/patients",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "patients"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Alerts",
+      "item": [
+        {
+          "name": "Get Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/alerts",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"message\": \"High Blood Pressure\",\n  \"type\": \"critical\",\n  \"description\": \"Patient reading was 150/100, requires immediate attention.\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/alerts",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Alert",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isResolved\": true,\n  \"type\": \"resolved\",\n  \"description\": \"Medication was administered, patient stable.\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/alerts/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Alert",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/alerts/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "ALERT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Appointments",
+      "item": [
+        {
+          "name": "Get Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/appointments",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/appointments/slots?date=2026-06-01",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-06-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"date\": \"2026-06-01T10:00:00Z\",\n  \"reason\": \"Routine Checkup\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/appointments",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/appointments/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APPOINTMENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/appointments/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "APPOINTMENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.globals.set(\"token\", jsonData.data.token);",
+                  "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "    try { pm.environment.set(\"token\", jsonData.data.token); } catch(e) {}",
+                  "    console.log(\"Token automatically saved everywhere!\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Test User\",\n  \"email\": \"test@test.com\",\n  \"password\": \"password123\",\n  \"specialty\": \"Neurology\",\n  \"licenseNumber\": \"LIC987654321\",\n  \"phone\": \"1234567890\",\n  \"address\": \"123 Medical Center\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/auth/register",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.globals.set(\"token\", jsonData.data.token);",
+                  "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "    try { pm.environment.set(\"token\", jsonData.data.token); } catch(e) {}",
+                  "    console.log(\"Token automatically saved everywhere!\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/auth/login",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.resetToken) {",
+                  "    pm.globals.set(\"resetToken\", jsonData.data.resetToken);",
+                  "    pm.collectionVariables.set(\"resetToken\", jsonData.data.resetToken);",
+                  "    try { pm.environment.set(\"resetToken\", jsonData.data.resetToken); } catch(e) {}",
+                  "    console.log(\"Reset Token automatically saved everywhere!\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@test.com\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/auth/forgot-password",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/auth/reset-password/{{resetToken}}",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "reset-password",
+                "{{resetToken}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/auth/profile",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Updated Name\",\n  \"specialty\": \"Advanced Neurology\",\n  \"licenseNumber\": \"LIC987654321-UPDATED\",\n  \"phone\": \"0987654321\",\n  \"address\": \"456 Hospital Blvd\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/auth/profile",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Chat",
+      "item": [
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/messages/:patientId",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "messages",
+                ":patientId"
+              ],
+              "variable": [
+                {
+                  "key": "patientId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"text\": \"Hello, how are you feeling today?\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/messages/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "messages",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark As Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/messages/:id/read",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "messages",
+                ":id",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "MESSAGE_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/messages/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "messages",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "MESSAGE_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Dashboard",
+      "item": [
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/dashboard/stats",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "dashboard",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Devices",
+      "item": [
+        {
+          "name": "Start Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/devices/start/:patientId",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "devices",
+                "start",
+                ":patientId"
+              ],
+              "variable": [
+                {
+                  "key": "patientId",
+                  "value": "PATIENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Receive Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"heartRate\": 82,\n  \"temperature\": 37.1,\n  \"oxygenLevel\": 97,\n  \"bloodPressure\": \"118/78\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/devices/data",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "devices",
+                "data"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Patients",
+      "item": [
+        {
+          "name": "Get Me (Patient Self)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/patients/me",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/patients/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@patient.com\",\n  \"age\": 45,\n  \"phone\": \"5551234567\",\n  \"gender\": \"Male\",\n  \"medicalHistory\": \"No significant prior history.\",\n  \"condition\": \"Asthma\",\n  \"status\": \"monitoring\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/patients/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/patients/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "PATIENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Doctor Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Patient is showing significant improvement.\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/patients/:id/notes",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ":id",
+                "notes"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "PATIENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"status\": \"stable\",\n  \"condition\": \"Asthma - Controlled\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/patients/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "PATIENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Patient",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/patients/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "patients",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "PATIENT_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. Reports",
+      "item": [
+        {
+          "name": "Export Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/reports/export",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "reports",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/reports/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "reports",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"title\": \"Weekly Health Summary\",\n  \"startDate\": \"2026-05-01T00:00:00Z\",\n  \"endDate\": \"2026-05-07T00:00:00Z\",\n  \"doctorNotes\": \"Patient has been very stable.\",\n  \"aiRecommendation\": \"Continue current dosage.\"\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/reports/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "reports",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. Vitals",
+      "item": [
+        {
+          "name": "Get Vitals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/vitals/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "vitals",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Vitals",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"heartRate\": 80,\n  \"bloodPressure\": \"120/80\",\n  \"temperature\": 36.8,\n  \"oxygenLevel\": 98\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/vitals/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "vitals",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vitals",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"heartRate\": 85,\n  \"bloodPressure\": \"125/82\",\n  \"temperature\": 37.0\n}"
+            },
+            "url": {
+              "raw": "localhost:5000/api/vitals/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "vitals",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "VITAL_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vitals",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "localhost:5000/api/vitals/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "vitals",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "VITAL_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11. Base Route",
+      "item": [
+        {
+          "name": "Base Route GET",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "localhost:5000/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Base Route POST",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "localhost:5000/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Base Route PUT",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "localhost:5000/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Base Route DELETE",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "localhost:5000/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    }
+  ]
+}

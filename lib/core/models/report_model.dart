@@ -1,49 +1,67 @@
-/// Report model — maps to the Reports CRUD endpoints.
-class ReportModel {
-  final String? id;
+/// Shared model representing a report returned by the HealthRootz API.
+///
+/// Maps to the JSON shape produced by:
+///   GET  /api/reports/
+///   POST /api/reports/
+class ApiReport {
+  final String id;
   final String? patientId;
-  final String? title;
-  final String? description;
-  final String? status; // "draft", "final"
-  final String? startDate;
-  final String? endDate;
-  final String? createdAt;
-  final String? updatedAt;
+  final String? patientName;
+  final String title;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String doctorNotes;
+  final String aiRecommendation;
+  final DateTime createdAt;
 
-  ReportModel({
-    this.id,
+  const ApiReport({
+    required this.id,
     this.patientId,
-    this.title,
-    this.description,
-    this.status,
-    this.startDate,
-    this.endDate,
-    this.createdAt,
-    this.updatedAt,
+    this.patientName,
+    required this.title,
+    required this.startDate,
+    required this.endDate,
+    required this.doctorNotes,
+    required this.aiRecommendation,
+    required this.createdAt,
   });
 
-  factory ReportModel.fromJson(Map<String, dynamic> json) {
-    return ReportModel(
-      id: json['_id'] as String?,
-      patientId: json['patientId'] as String?,
-      title: json['title'] as String?,
-      description: json['description'] as String?,
-      status: json['status'] as String?,
-      startDate: json['startDate'] as String?,
-      endDate: json['endDate'] as String?,
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
+  factory ApiReport.fromJson(Map<String, dynamic> json) {
+    // The backend may nest patient info inside a `patient` sub-object
+    final patient = json['patient'] as Map<String, dynamic>?;
+
+    return ApiReport(
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      patientId: patient?['_id']?.toString() ??
+          patient?['id']?.toString() ??
+          json['patientId']?.toString(),
+      patientName:
+          patient?['name']?.toString() ?? json['patientName']?.toString(),
+      title: json['title']?.toString() ?? 'Health Report',
+      startDate: _parseDate(json['startDate']),
+      endDate: _parseDate(json['endDate']),
+      doctorNotes: json['doctorNotes']?.toString() ?? '',
+      aiRecommendation: json['aiRecommendation']?.toString() ?? '',
+      createdAt: _parseDate(json['createdAt'] ?? json['startDate']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (patientId != null) 'patientId': patientId,
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (status != null) 'status': status,
-      if (startDate != null) 'startDate': startDate,
-      if (endDate != null) 'endDate': endDate,
-    };
+  Map<String, dynamic> toJson() => {
+        'patientId': patientId,
+        'title': title,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+        'doctorNotes': doctorNotes,
+        'aiRecommendation': aiRecommendation,
+      };
+
+  static DateTime _parseDate(dynamic raw) {
+    if (raw == null) return DateTime.now();
+    if (raw is DateTime) return raw;
+    try {
+      return DateTime.parse(raw.toString());
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 }
