@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
@@ -49,7 +48,10 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
     debugPrint('[Booking] UI: confirmation snackbar shown');
   }
 
-  Future<void> _handleConfirm(PatientBookingCubit cubit, PatientBookingModel state) async {
+  Future<void> _handleConfirm(
+    PatientBookingCubit cubit,
+    PatientBookingModel state,
+  ) async {
     debugPrint(
       '[Booking] UI: confirm pressed — patientId=${state.patientId}, '
       'date=${state.selectedDate?.apiDate}, slot=${state.selectedSlotLabel}, '
@@ -170,7 +172,8 @@ class _ConfirmBookingScreenState extends State<ConfirmBookingScreen> {
                               _buildDetailRow(
                                 icon: Icons.medical_services_outlined,
                                 label: 'Doctor',
-                                value: state.doctorName ?? 'General appointment',
+                                value:
+                                    state.doctorName ?? 'General appointment',
                                 subValue: state.specialty,
                               ),
                               const SizedBox(height: 24),

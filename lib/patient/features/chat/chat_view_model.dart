@@ -243,6 +243,14 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       _doctorId = doctorId;
     }
 
+    // Add optimistically before sending
+    _messages.add(ChatMessage(
+      text: text,
+      isSender: true,
+      timestamp: DateTime.now(),
+    ));
+    _emitLoaded();
+
     emit(const ChatSending());
     final result = await _sendMessageUseCase(
       doctorId: doctorId,

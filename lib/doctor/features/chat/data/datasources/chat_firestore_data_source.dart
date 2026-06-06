@@ -11,13 +11,25 @@ abstract class ChatFirestoreDataSource {
     required String patientId,
   });
 
-  Stream<List<ChatUser>> watchChatList({required String doctorId});
+  Stream<List<ChatUser>> watchAllPatients({
+    required String doctorId,
+    required Future<List<Map<String, dynamic>>> Function() fetchPatients,
+  });
 
   Future<ChatMessage> sendMessage({
     required String doctorId,
     required String patientId,
     required String senderId,
     required String text,
+  });
+
+  Future<ChatMessage> sendMediaMessage({
+    required String doctorId,
+    required String patientId,
+    required String senderId,
+    required String fileUrl,
+    required String fileType,
+    required String fileName,
   });
 
   Future<void> markAsRead({
@@ -41,10 +53,14 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   static const String _messageField = 'message';
   static const String _senderIdField = 'senderId';
   static const String _timestampField = 'timestamp';
+  static const String _clientTimestampField = 'clientTimestamp';
   static const String _chatIdField = 'chatId';
   static const String _doctorIdField = 'doctorId';
   static const String _patientIdField = 'patientId';
   static const String _patientNameField = 'patientName';
+  static const String _mediaUrlField = 'mediaUrl';
+  static const String _mediaTypeField = 'mediaType';
+  static const String _fileNameField = 'fileName';
 
   final FirebaseFirestore? _firestoreOverride;
   bool _initialized = false;
@@ -64,6 +80,18 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   String _chatId(String doctorId, String patientId) =>
       ChatIdHelper.build(doctorId, patientId);
 
+  DateTime _parseMessageDateTime(Object? timestamp) {
+    if (timestamp is Timestamp) return timestamp.toDate().toLocal();
+    if (timestamp is DateTime) return timestamp.toLocal();
+    if (timestamp is num) {
+      return DateTime.fromMillisecondsSinceEpoch(timestamp.toInt()).toLocal();
+    }
+    if (timestamp is String && timestamp.isNotEmpty) {
+      return DateTime.tryParse(timestamp)?.toLocal() ?? DateTime.now();
+    }
+    return DateTime.now();
+  }
+
   ChatMessage _mapMessage(
     DocumentSnapshot<Map<String, dynamic>> doc,
     String doctorId,
@@ -71,10 +99,9 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   ) {
     final data = doc.data() ?? <String, dynamic>{};
     final senderId = data[_senderIdField]?.toString() ?? '';
-    final timestamp = data[_timestampField];
-    final dateTime = timestamp is Timestamp
-        ? timestamp.toDate()
-        : DateTime.now();
+    final dateTime = _parseMessageDateTime(
+      data[_timestampField] ?? data[_clientTimestampField],
+    );
 
     return ChatMessage(
       id: doc.id,
@@ -83,6 +110,9 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
       time: DateFormat.jm().format(dateTime),
       patientId: patientId,
       isRead: data['isRead'] as bool? ?? false,
+      mediaUrl: data[_mediaUrlField]?.toString(),
+      mediaType: data[_mediaTypeField]?.toString(),
+      fileName: data[_fileNameField]?.toString(),
     );
   }
 
@@ -94,6 +124,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     await _ensureReady();
 
     yield* _chatsRef
+        .where(_doctorIdField, isEqualTo: doctorId)
         .where(_patientIdField, isEqualTo: patientId)
         .snapshots()
         .map((snapshot) {
@@ -105,52 +136,111 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   }
 
   @override
-  Stream<List<ChatUser>> watchChatList({required String doctorId}) async* {
+  Stream<List<ChatUser>> watchAllPatients({
+    required String doctorId,
+    required Future<List<Map<String, dynamic>>> Function() fetchPatients,
+  }) async* {
     await _ensureReady();
 
-    yield* _chatsRef.snapshots().asyncMap((snapshot) async {
-      final grouped =
-          <String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>{};
+    yield* _chatsRef
+        .where(_doctorIdField, isEqualTo: doctorId)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final patients = await fetchPatients();
+          final grouped = _groupMessagesByPatient(snapshot.docs, doctorId);
+          return _mergePatientsWithChats(
+            patients: patients,
+            grouped: grouped,
+            doctorId: doctorId,
+          );
+        });
+  }
 
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final patientId =
-            data[_patientIdField]?.toString() ??
-            _patientIdFromDoctorChat(
-              data[_chatIdField]?.toString() ?? '',
-              doctorId,
-            );
-        if (patientId == null) continue;
-        grouped.putIfAbsent(patientId, () => []).add(doc);
-      }
+  Map<String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+  _groupMessagesByPatient(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String doctorId,
+  ) {
+    final grouped =
+        <String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>{};
 
-      final rows = <({ChatUser user, int timestamp})>[];
-      for (final entry in grouped.entries) {
-        final messages = entry.value..sort(_sortByTimestamp);
-        final latest = messages.last;
-        final data = latest.data();
-        final patientName =
-            _extractPatientName(data) ?? await _resolvePatientName(entry.key);
+    for (final doc in docs) {
+      final data = doc.data();
+      final patientId =
+          data[_patientIdField]?.toString() ??
+          _patientIdFromDoctorChat(
+            data[_chatIdField]?.toString() ?? '',
+            doctorId,
+          );
+      if (patientId == null) continue;
+      grouped.putIfAbsent(patientId, () => []).add(doc);
+    }
+
+    return grouped;
+  }
+
+  List<ChatUser> _mergePatientsWithChats({
+    required List<Map<String, dynamic>> patients,
+    required Map<String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+    grouped,
+    required String doctorId,
+  }) {
+    final rows = <({ChatUser user, int timestamp})>[];
+
+    for (final patient in patients) {
+      final patientId = (patient['id'] ?? patient['_id'] ?? '').toString();
+      if (patientId.isEmpty) continue;
+
+      final name = (patient['patientName'] ?? patient['name'] ?? patientId)
+          .toString();
+      final phone = patient['phone']?.toString();
+      final messages = grouped[patientId];
+
+      if (messages == null || messages.isEmpty) {
         rows.add((
           user: ChatUser(
-            id: entry.key,
-            name: patientName ?? _fallbackPatientName(entry.key),
-            lastMessage: (data[_messageField] ?? data['text'] ?? '').toString(),
-            time: _formatChatTime(data[_timestampField]),
-            unreadCount: messages.where((message) {
-              final messageData = message.data();
-              return messageData[_senderIdField]?.toString() != doctorId &&
-                  (messageData['isRead'] as bool? ?? false) == false;
-            }).length,
+            id: patientId,
+            name: name,
+            phone: phone,
+            lastMessage: 'No messages yet',
+            time: '',
+            unreadCount: 0,
             isActive: true,
           ),
-          timestamp: _timestampValue(data[_timestampField]),
+          timestamp: 0,
         ));
+        continue;
       }
 
-      rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      return rows.map((row) => row.user).toList(growable: false);
-    });
+      final sortedMessages = messages.toList()..sort(_sortByTimestamp);
+      final latest = sortedMessages.last;
+      final data = latest.data();
+      final patientName = _patientNameFromMessages(sortedMessages) ?? name;
+
+      rows.add((
+        user: ChatUser(
+          id: patientId,
+          name: patientName,
+          phone: phone,
+          lastMessage: (data[_messageField] ?? data['text'] ?? '').toString(),
+          time: _formatChatTime(
+            data[_timestampField] ?? data[_clientTimestampField],
+          ),
+          unreadCount: sortedMessages.where((message) {
+            final messageData = message.data();
+            return messageData[_senderIdField]?.toString() != doctorId &&
+                (messageData['isRead'] as bool? ?? false) == false;
+          }).length,
+          isActive: true,
+        ),
+        timestamp: _timestampValue(
+          data[_timestampField] ?? data[_clientTimestampField],
+        ),
+      ));
+    }
+
+    rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return rows.map((row) => row.user).toList(growable: false);
   }
 
   @override
@@ -163,14 +253,55 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     await _ensureReady();
     final chatId = _chatId(doctorId, patientId);
     final messageRef = _chatsRef.doc();
-    final patientName = await _resolvePatientName(patientId);
+    final patientName =
+        await _patientNameFromExistingMessages(patientId) ??
+        await _resolvePatientName(patientId);
     final payload = <String, dynamic>{
       _messageField: text,
       _senderIdField: senderId,
+      _clientTimestampField: DateTime.now().millisecondsSinceEpoch,
       _timestampField: FieldValue.serverTimestamp(),
       _chatIdField: chatId,
       _doctorIdField: doctorId,
       _patientIdField: patientId,
+      'isRead': false,
+    };
+    if (patientName != null) {
+      payload[_patientNameField] = patientName;
+    }
+
+    await messageRef.set(payload);
+
+    final snapshot = await messageRef.get();
+    return _mapMessage(snapshot, doctorId, patientId);
+  }
+
+  @override
+  Future<ChatMessage> sendMediaMessage({
+    required String doctorId,
+    required String patientId,
+    required String senderId,
+    required String fileUrl,
+    required String fileType,
+    required String fileName,
+  }) async {
+    await _ensureReady();
+    final chatId = _chatId(doctorId, patientId);
+    final messageRef = _chatsRef.doc();
+    final patientName =
+        await _patientNameFromExistingMessages(patientId) ??
+        await _resolvePatientName(patientId);
+    final payload = <String, dynamic>{
+      _messageField: fileName,
+      _senderIdField: senderId,
+      _clientTimestampField: DateTime.now().millisecondsSinceEpoch,
+      _timestampField: FieldValue.serverTimestamp(),
+      _chatIdField: chatId,
+      _doctorIdField: doctorId,
+      _patientIdField: patientId,
+      _mediaUrlField: fileUrl,
+      _mediaTypeField: fileType,
+      _fileNameField: fileName,
       'isRead': false,
     };
     if (patientName != null) {
@@ -211,10 +342,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   }
 
   String _formatChatTime(Object? value) {
-    if (value is Timestamp) {
-      return DateFormat.jm().format(value.toDate());
-    }
-    return '';
+    return DateFormat.jm().format(_parseMessageDateTime(value));
   }
 
   int _sortByTimestamp(
@@ -222,14 +350,19 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     QueryDocumentSnapshot<Map<String, dynamic>> b,
   ) {
     return _timestampValue(
-      a.data()[_timestampField],
-    ).compareTo(_timestampValue(b.data()[_timestampField]));
+      a.data()[_timestampField] ?? a.data()[_clientTimestampField],
+    ).compareTo(
+      _timestampValue(
+        b.data()[_timestampField] ?? b.data()[_clientTimestampField],
+      ),
+    );
   }
 
   int _timestampValue(Object? value) {
     if (value is Timestamp) return value.millisecondsSinceEpoch;
     if (value is DateTime) return value.millisecondsSinceEpoch;
-    return DateTime.now().millisecondsSinceEpoch;
+    if (value is num) return value.toInt();
+    return 0;
   }
 
   Future<String?> _resolvePatientName(String patientId) async {
@@ -288,6 +421,28 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     }
   }
 
+  String? _patientNameFromMessages(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> messages,
+  ) {
+    for (final doc in messages.reversed) {
+      final name = doc.data()[_patientNameField]?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+    }
+    return null;
+  }
+
+  Future<String?> _patientNameFromExistingMessages(String patientId) async {
+    try {
+      final snapshot = await _chatsRef
+          .where(_patientIdField, isEqualTo: patientId)
+          .get();
+      final docs = snapshot.docs.toList()..sort(_sortByTimestamp);
+      return _patientNameFromMessages(docs);
+    } on FirebaseException {
+      return null;
+    }
+  }
+
   String? _extractPatientName(Map<String, dynamic>? data) {
     final raw =
         data?[_patientNameField] ??
@@ -296,12 +451,5 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
         data?['displayName'];
     final name = raw?.toString().trim();
     return name == null || name.isEmpty ? null : name;
-  }
-
-  String _fallbackPatientName(String patientId) {
-    final visible = patientId.length <= 6
-        ? patientId
-        : patientId.substring(patientId.length - 6);
-    return 'Patient $visible';
   }
 }

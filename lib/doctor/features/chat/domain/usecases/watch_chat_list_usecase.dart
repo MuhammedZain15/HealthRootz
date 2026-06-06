@@ -8,7 +8,13 @@ class WatchChatListUseCase {
 
   final ChatRepository _repository;
 
-  Stream<Either<Failure, List<ChatUser>>> call({required String doctorId}) {
-    return _repository.watchChatList(doctorId: doctorId);
+  Stream<Either<Failure, List<ChatUser>>> call({
+    required String doctorId,
+    required Future<List<Map<String, dynamic>>> Function() fetchPatients,
+  }) {
+    return _repository.watchChatList(
+      doctorId: doctorId,
+      fetchPatients: fetchPatients,
+    );
   }
 }

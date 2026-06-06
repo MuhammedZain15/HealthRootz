@@ -8,6 +8,7 @@ import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestor
 import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/watch_chat_list_usecase.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
+import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 
 abstract class ChatListState {
   const ChatListState();
@@ -33,18 +34,24 @@ class ChatListError extends ChatListState {
 }
 
 class ChatListCubit extends Cubit<ChatListState> implements Listenable {
-  ChatListCubit({WatchChatListUseCase? watchChatListUseCase})
-    : _watchChatListUseCase =
-          watchChatListUseCase ??
-          WatchChatListUseCase(
-            ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-          ),
-      super(const ChatListInitial()) {
+  ChatListCubit({
+    WatchChatListUseCase? watchChatListUseCase,
+    Future<List<Map<String, dynamic>>> Function(String doctorId)?
+    fetchDoctorPatients,
+  }) : _watchChatListUseCase =
+           watchChatListUseCase ??
+           WatchChatListUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
+       _fetchPatientsFn = fetchDoctorPatients ?? _defaultFetchDoctorPatients,
+       super(const ChatListInitial()) {
     _sub = stream.listen((_) => _notifyListeners());
     unawaited(_startChatListStream());
   }
 
   final WatchChatListUseCase _watchChatListUseCase;
+  final Future<List<Map<String, dynamic>>> Function(String doctorId)
+  _fetchPatientsFn;
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
   late final StreamSubscription<ChatListState> _sub;
   StreamSubscription<dynamic>? _chatListSub;
@@ -53,6 +60,31 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
   List<ChatUser> _filtered = const <ChatUser>[];
 
   List<ChatUser> get chats => _filtered;
+
+  static Future<List<Map<String, dynamic>>> _defaultFetchDoctorPatients(
+    String doctorId,
+  ) async {
+    final repository = PatientRepositoryImpl();
+    final result = await repository.getPatients();
+    return result.fold((_) => <Map<String, dynamic>>[], (patients) {
+      return patients
+          .map(
+            (patient) => <String, dynamic>{
+              'id': patient.id,
+              'name': patient.name,
+              'patientName': patient.name,
+              'phone': patient.phone,
+            },
+          )
+          .toList(growable: false);
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchDoctorPatients(
+    String doctorId,
+  ) {
+    return _fetchPatientsFn(doctorId);
+  }
 
   Future<void> _startChatListStream() async {
     final doctorId = await TokenStorage.getUserId();
@@ -63,7 +95,10 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 
     emit(const ChatListLoading());
     await _chatListSub?.cancel();
-    _chatListSub = _watchChatListUseCase(doctorId: doctorId).listen((result) {
+    _chatListSub = _watchChatListUseCase(
+      doctorId: doctorId,
+      fetchPatients: () => _fetchDoctorPatients(doctorId),
+    ).listen((result) {
       result.fold((failure) => emit(ChatListError(failure.message)), (chats) {
         _chats = chats;
         _filtered = chats;
@@ -115,5 +150,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 }
 
 class ChatListViewModel extends ChatListCubit {
-  ChatListViewModel() : super();
+  ChatListViewModel({
+    super.fetchDoctorPatients,
+  });
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/doctor/features/home/cubit/add_patient_cubit.dart';
 import 'package:grad_project/doctor/features/home/models/add_patient_model.dart';
@@ -152,7 +151,9 @@ class _AddPatientPageState extends State<AddPatientPage> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
-                onPressed: state.isLoading ? null : () => Navigator.pop(context),
+                onPressed: state.isLoading
+                    ? null
+                    : () => Navigator.pop(context),
               ),
             ),
             body: SafeArea(
