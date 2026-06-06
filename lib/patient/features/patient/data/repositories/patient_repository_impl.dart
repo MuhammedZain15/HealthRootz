@@ -185,14 +185,6 @@ class PatientRepositoryImpl implements PatientRepository {
     );
   }
 
-  /// Unwraps a `{ "data": {...} }` envelope or returns the map as-is.
-  Map<String, dynamic> _unwrapMap(dynamic body) {
-    return PatientResponseParser.extractPatientMap(body) ??
-        (body is Map
-            ? Map<String, dynamic>.from(body)
-            : <String, dynamic>{});
-  }
-
   /// Unwraps a `{ "data": [...] }` envelope or returns the list as-is.
   List<dynamic> _unwrapList(dynamic body) {
     if (body is List) return body;

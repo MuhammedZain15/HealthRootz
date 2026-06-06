@@ -26,10 +26,11 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Stream<Either<Failure, List<ChatUser>>> watchChatList({
     required String doctorId,
+    required Future<List<Map<String, dynamic>>> Function() fetchPatients,
   }) async* {
     try {
       yield* _firestoreDataSource
-          .watchChatList(doctorId: doctorId)
+          .watchAllPatients(doctorId: doctorId, fetchPatients: fetchPatients)
           .map(Right.new);
     } catch (e) {
       yield Left(Failure(e.toString()));
@@ -49,6 +50,30 @@ class ChatRepositoryImpl implements ChatRepository {
         patientId: patientId,
         senderId: senderId,
         text: text,
+      );
+      return Right(message);
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatMessage>> sendMediaMessage({
+    required String doctorId,
+    required String patientId,
+    required String senderId,
+    required String fileUrl,
+    required String fileType,
+    required String fileName,
+  }) async {
+    try {
+      final message = await _firestoreDataSource.sendMediaMessage(
+        doctorId: doctorId,
+        patientId: patientId,
+        senderId: senderId,
+        fileUrl: fileUrl,
+        fileType: fileType,
+        fileName: fileName,
       );
       return Right(message);
     } catch (e) {

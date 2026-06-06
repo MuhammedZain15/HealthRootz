@@ -26,7 +26,9 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
     DoctorChatSession.activePatientId = user.id;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ChatDetailPage(user: user)),
+      MaterialPageRoute(
+        builder: (_) => ChatDetailPage(user: user, patientId: user.id),
+      ),
     );
   }
 

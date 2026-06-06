@@ -1,8 +1,10 @@
 // lib/doctor/features/chat/view_models/chat_detail_view_model.dart
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:grad_project/core/network/token_storage.dart';
 import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
@@ -11,7 +13,10 @@ import 'package:grad_project/doctor/features/chat/domain/usecases/get_messages_u
 import 'package:grad_project/doctor/features/chat/domain/usecases/mark_as_read_usecase.dart';
 import 'package:grad_project/doctor/features/chat/doctor_chat_session.dart';
 import 'package:grad_project/doctor/features/chat/domain/usecases/send_message_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/usecases/send_media_message_usecase.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
+import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
+import 'package:intl/intl.dart';
 
 abstract class ChatDetailState {
   const ChatDetailState();
@@ -43,6 +48,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   ChatDetailCubit({
     GetMessagesUseCase? getMessagesUseCase,
     SendMessageUseCase? sendMessageUseCase,
+    SendMediaMessageUseCase? sendMediaMessageUseCase,
     MarkAsReadUseCase? markAsReadUseCase,
     DeleteMessageUseCase? deleteMessageUseCase,
   }) : _getMessagesUseCase =
@@ -55,6 +61,11 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
            SendMessageUseCase(
              ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
            ),
+       _sendMediaMessageUseCase =
+           sendMediaMessageUseCase ??
+           SendMediaMessageUseCase(
+             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
+           ),
        _markAsReadUseCase =
            markAsReadUseCase ??
            MarkAsReadUseCase(ChatRepositoryImpl(ChatFirestoreDataSourceImpl())),
@@ -65,14 +76,11 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
            ),
        super(const ChatDetailInitial()) {
     _sub = stream.listen(_onStateChanged);
-    final patientId = DoctorChatSession.activePatientId;
-    if (patientId != null && patientId.isNotEmpty) {
-      unawaited(loadMessages(patientId));
-    }
   }
 
   final GetMessagesUseCase _getMessagesUseCase;
   final SendMessageUseCase _sendMessageUseCase;
+  final SendMediaMessageUseCase _sendMediaMessageUseCase;
   final MarkAsReadUseCase _markAsReadUseCase;
   final DeleteMessageUseCase _deleteMessageUseCase;
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
@@ -81,7 +89,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
 
   String? _patientId;
   String? _doctorId;
-  List<ChatMessage> _messages = const <ChatMessage>[];
+  final List<ChatMessage> _messages = [];
 
   List<ChatMessage> get messages => _messages;
 
@@ -102,8 +110,10 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
           result.fold((failure) => emit(ChatDetailError(failure.message)), (
             messages,
           ) {
-            _messages = messages;
-            emit(ChatDetailLoaded(messages));
+            _messages
+              ..clear()
+              ..addAll(messages);
+            _emitLoaded();
             unawaited(_markIncomingMessagesAsRead(messages));
           });
         });
@@ -123,6 +133,16 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
     _patientId = patientId;
     _doctorId = doctorId;
 
+    final optimisticMessage = ChatMessage(
+      id: '',
+      text: text,
+      isMe: true,
+      time: DateFormat.jm().format(DateTime.now()),
+      patientId: patientId,
+    );
+    _messages.add(optimisticMessage);
+    _emitLoaded();
+
     emit(const ChatDetailSending());
     final result = await _sendMessageUseCase(
       doctorId: doctorId,
@@ -130,14 +150,117 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       senderId: doctorId,
       text: text,
     );
-    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
+    result.fold(
+      (failure) {
+        _messages.remove(optimisticMessage);
+        emit(ChatDetailError(failure.message));
+        _emitLoaded();
+      },
+      (sentMessage) {
+        _messages.remove(optimisticMessage);
+        if (!_messages.any((message) => message.id == sentMessage.id)) {
+          _messages.add(sentMessage);
+        }
+        _emitLoaded();
+      },
+    );
+  }
+
+  Future<void> sendMediaMessage({
+    required String filePath,
+    required String fileName,
+    required String fileType,
+  }) async {
+    final patientId = _patientId ?? DoctorChatSession.activePatientId;
+    final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (patientId == null ||
+        patientId.isEmpty ||
+        doctorId == null ||
+        doctorId.isEmpty) {
+      emit(const ChatDetailError('Chat participants are missing.'));
+      return;
+    }
+    _patientId = patientId;
+    _doctorId = doctorId;
+
+    emit(const ChatDetailSending());
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('chats')
+          .child(doctorId)
+          .child(patientId)
+          .child('${DateTime.now().millisecondsSinceEpoch}_$fileName');
+      final uploadTask = ref.putFile(File(filePath));
+      final snapshot = await uploadTask;
+      final fileUrl = await snapshot.ref.getDownloadURL();
+
+      final result = await _sendMediaMessageUseCase(
+        doctorId: doctorId,
+        patientId: patientId,
+        senderId: doctorId,
+        fileUrl: fileUrl,
+        fileType: fileType,
+        fileName: fileName,
+      );
+      result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
+    } catch (e) {
+      emit(ChatDetailError('Failed to send media: $e'));
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPatientsList() async {
+    final repository = PatientRepositoryImpl();
+    final result = await repository.getPatients();
+    return result.fold((_) => <Map<String, dynamic>>[], (patients) {
+      return patients
+          .map(
+            (patient) => <String, dynamic>{
+              'id': patient.id,
+              'name': patient.name,
+            },
+          )
+          .toList();
+    });
+  }
+
+  Future<void> forwardMessage(
+    ChatMessage message,
+    String targetPatientId,
+  ) async {
+    final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (doctorId == null || doctorId.isEmpty) return;
+
+    if (message.mediaUrl != null && message.mediaUrl!.isNotEmpty) {
+      await _sendMediaMessageUseCase(
+        doctorId: doctorId,
+        patientId: targetPatientId,
+        senderId: doctorId,
+        fileUrl: message.mediaUrl!,
+        fileType: message.mediaType ?? '',
+        fileName: message.fileName ?? '',
+      );
+    } else {
+      await _sendMessageUseCase(
+        doctorId: doctorId,
+        patientId: targetPatientId,
+        senderId: doctorId,
+        text: message.text,
+      );
+    }
   }
 
   void _onStateChanged(ChatDetailState state) {
     if (state is ChatDetailLoaded) {
-      _messages = state.messages;
+      _messages
+        ..clear()
+        ..addAll(state.messages);
     }
     _notifyListeners();
+  }
+
+  void _emitLoaded() {
+    emit(ChatDetailLoaded(List<ChatMessage>.unmodifiable(_messages)));
   }
 
   Future<void> _markIncomingMessagesAsRead(List<ChatMessage> messages) async {

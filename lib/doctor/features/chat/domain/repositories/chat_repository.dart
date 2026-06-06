@@ -15,6 +15,7 @@ abstract class ChatRepository {
 
   Stream<Either<Failure, List<ChatUser>>> watchChatList({
     required String doctorId,
+    required Future<List<Map<String, dynamic>>> Function() fetchPatients,
   });
 
   Future<Either<Failure, ChatMessage>> sendMessage({
@@ -22,6 +23,15 @@ abstract class ChatRepository {
     required String patientId,
     required String senderId,
     required String text,
+  });
+
+  Future<Either<Failure, ChatMessage>> sendMediaMessage({
+    required String doctorId,
+    required String patientId,
+    required String senderId,
+    required String fileUrl,
+    required String fileType,
+    required String fileName,
   });
 
   Future<Either<Failure, void>> markAsRead({

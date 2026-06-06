@@ -123,18 +123,18 @@ class _ReportConfigurationCardState extends State<ReportConfigurationCard> {
                   ),
                 )
               : DropdownButtonFormField<String>(
-                  value: widget.selectedPatient?.id,
+                  initialValue: widget.selectedPatient?.id,
                   hint: const Text('Choose a patient...'),
                   decoration: _inputDecoration(),
                   items: widget.patients
                       .map(
-                        (p) => DropdownMenuItem(value: p.id, child: Text(p.name)),
+                        (p) =>
+                            DropdownMenuItem(value: p.id, child: Text(p.name)),
                       )
                       .toList(),
                   onChanged: (id) {
                     if (id == null) return;
-                    final next =
-                        widget.patients.firstWhere((p) => p.id == id);
+                    final next = widget.patients.firstWhere((p) => p.id == id);
                     widget.onPatientChanged(next);
                   },
                 ),
@@ -271,10 +271,9 @@ class _ReportConfigurationCardState extends State<ReportConfigurationCard> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed:
-                  (widget.selectedPatient == null || widget.isGenerating)
-                      ? null
-                      : widget.onGenerate,
+              onPressed: (widget.selectedPatient == null || widget.isGenerating)
+                  ? null
+                  : widget.onGenerate,
               icon: widget.isGenerating
                   ? const SizedBox(
                       width: 18,
@@ -314,8 +313,7 @@ class _ReportConfigurationCardState extends State<ReportConfigurationCard> {
       hintText: hintText,
       filled: true,
       fillColor: Colors.white,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.black.withOpacity(0.06)),
@@ -355,9 +353,7 @@ class _FormatButton extends StatelessWidget {
           color: selected ? const Color(0xFF1D4ED8) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF1D4ED8)
-                : const Color(0xFFE5E7EB),
+            color: selected ? const Color(0xFF1D4ED8) : const Color(0xFFE5E7EB),
           ),
         ),
         child: Text(

@@ -353,9 +353,11 @@ class _PatientDetailsBody extends StatelessWidget {
             user: ChatUser(
               id: patient.id,
               name: patient.name,
+              phone: patient.phone,
               lastMessage: '',
               time: '',
             ),
+            patientId: patient.id,
           ),
         ),
       ),

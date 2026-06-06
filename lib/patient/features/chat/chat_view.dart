@@ -18,12 +18,15 @@ class ChatView extends StatefulWidget {
 
 class _ChatViewState extends State<ChatView> {
   late ChatViewModel _viewModel;
+  final ScrollController _scrollController = ScrollController();
+
 
   @override
   void initState() {
     super.initState();
     _viewModel = ChatViewModel(isDoctorChat: widget.isDoctorChat, sessionId: widget.sessionId);
     _viewModel.addListener(_onViewModelChanged);
+    _scrollToBottom();
     _viewModel.setOnEmergency(() {
       _showEmergencyDialog();
     });
@@ -34,12 +37,28 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.close();
     super.dispose();
   }
 
-  void _onViewModelChanged() => setState(() {});
+  void _onViewModelChanged() {
+    setState(() {});
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   void _showEmergencyDialog() {
     showDialog(
@@ -159,6 +178,7 @@ class _ChatViewState extends State<ChatView> {
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 900),
                 child: ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
