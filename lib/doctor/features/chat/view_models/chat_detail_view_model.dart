@@ -93,23 +93,32 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
 
   List<ChatMessage> get messages => _messages;
 
+  void _safeEmit(ChatDetailState state) {
+    if (isClosed) return;
+    emit(state);
+  }
+
   Future<void> loadMessages(String patientId) async {
     _patientId = patientId;
     final doctorId = await TokenStorage.getUserId();
+    if (isClosed) return;
     if (doctorId == null || doctorId.isEmpty) {
-      emit(const ChatDetailError('Doctor id is missing.'));
+      _safeEmit(const ChatDetailError('Doctor id is missing.'));
       return;
     }
     _doctorId = doctorId;
 
     await _messagesSub?.cancel();
-    emit(const ChatDetailLoading());
+    if (isClosed) return;
+    _safeEmit(const ChatDetailLoading());
 
     _messagesSub = _getMessagesUseCase(doctorId: doctorId, patientId: patientId)
         .listen((result) {
-          result.fold((failure) => emit(ChatDetailError(failure.message)), (
+          if (isClosed) return;
+          result.fold((failure) => _safeEmit(ChatDetailError(failure.message)), (
             messages,
           ) {
+            if (isClosed) return;
             _messages
               ..clear()
               ..addAll(messages);
@@ -123,11 +132,12 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
     if (text.trim().isEmpty) return;
     final patientId = _patientId ?? DoctorChatSession.activePatientId;
     final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (isClosed) return;
     if (patientId == null ||
         patientId.isEmpty ||
         doctorId == null ||
         doctorId.isEmpty) {
-      emit(const ChatDetailError('Chat participants are missing.'));
+      _safeEmit(const ChatDetailError('Chat participants are missing.'));
       return;
     }
     _patientId = patientId;
@@ -143,17 +153,18 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
     _messages.add(optimisticMessage);
     _emitLoaded();
 
-    emit(const ChatDetailSending());
+    _safeEmit(const ChatDetailSending());
     final result = await _sendMessageUseCase(
       doctorId: doctorId,
       patientId: patientId,
       senderId: doctorId,
       text: text,
     );
+    if (isClosed) return;
     result.fold(
       (failure) {
         _messages.remove(optimisticMessage);
-        emit(ChatDetailError(failure.message));
+        _safeEmit(ChatDetailError(failure.message));
         _emitLoaded();
       },
       (sentMessage) {
@@ -173,17 +184,18 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   }) async {
     final patientId = _patientId ?? DoctorChatSession.activePatientId;
     final doctorId = _doctorId ?? await TokenStorage.getUserId();
+    if (isClosed) return;
     if (patientId == null ||
         patientId.isEmpty ||
         doctorId == null ||
         doctorId.isEmpty) {
-      emit(const ChatDetailError('Chat participants are missing.'));
+      _safeEmit(const ChatDetailError('Chat participants are missing.'));
       return;
     }
     _patientId = patientId;
     _doctorId = doctorId;
 
-    emit(const ChatDetailSending());
+    _safeEmit(const ChatDetailSending());
     try {
       final ref = FirebaseStorage.instance
           .ref()
@@ -193,6 +205,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
           .child('${DateTime.now().millisecondsSinceEpoch}_$fileName');
       final uploadTask = ref.putFile(File(filePath));
       final snapshot = await uploadTask;
+      if (isClosed) return;
       final fileUrl = await snapshot.ref.getDownloadURL();
 
       final result = await _sendMediaMessageUseCase(
@@ -203,9 +216,13 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
         fileType: fileType,
         fileName: fileName,
       );
-      result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
+      if (isClosed) return;
+      result.fold(
+        (failure) => _safeEmit(ChatDetailError(failure.message)),
+        (_) {},
+      );
     } catch (e) {
-      emit(ChatDetailError('Failed to send media: $e'));
+      _safeEmit(ChatDetailError('Failed to send media: $e'));
     }
   }
 
@@ -216,7 +233,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       return patients
           .map(
             (patient) => <String, dynamic>{
-              'id': patient.id,
+              'id': patient.chatUserId,
               'name': patient.name,
             },
           )
@@ -260,7 +277,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   }
 
   void _emitLoaded() {
-    emit(ChatDetailLoaded(List<ChatMessage>.unmodifiable(_messages)));
+    _safeEmit(ChatDetailLoaded(List<ChatMessage>.unmodifiable(_messages)));
   }
 
   Future<void> _markIncomingMessagesAsRead(List<ChatMessage> messages) async {
@@ -281,7 +298,11 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       patientId: patientId,
       messageId: messageId,
     );
-    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
+    if (isClosed) return;
+    result.fold(
+      (failure) => _safeEmit(ChatDetailError(failure.message)),
+      (_) {},
+    );
   }
 
   Future<void> deleteMessage(String messageId) async {
@@ -294,7 +315,11 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
       patientId: patientId,
       messageId: messageId,
     );
-    result.fold((failure) => emit(ChatDetailError(failure.message)), (_) {});
+    if (isClosed) return;
+    result.fold(
+      (failure) => _safeEmit(ChatDetailError(failure.message)),
+      (_) {},
+    );
   }
 
   @override
@@ -316,6 +341,7 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
   @override
   Future<void> close() async {
     await _messagesSub?.cancel();
+    _messagesSub = null;
     await _sub.cancel();
     return super.close();
   }

@@ -2,6 +2,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:grad_project/patient/features/chat/chat_model.dart';
 import 'package:grad_project/patient/features/chat/data/datasources/chat_firestore_data_source.dart';
+import 'package:grad_project/patient/features/chat/data/utils/chat_doctor_id.dart';
 import 'package:grad_project/patient/features/chat/domain/repositories/chat_repository.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
@@ -13,10 +14,10 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<Either<Failure, String>> resolveDoctorId(String patientId) async {
     try {
       final doctorId = await _firestoreDataSource.resolveDoctorId(patientId);
-      if (doctorId == null || doctorId.isEmpty) {
-        return const Left(Failure('Doctor id is missing for chat.'));
+      if (!isResolvableDoctorId(doctorId)) {
+        return const Left(Failure(kDoctorAssignmentMissingMessage));
       }
-      return Right(doctorId);
+      return Right(doctorId!);
     } catch (e) {
       return Left(Failure(e.toString()));
     }

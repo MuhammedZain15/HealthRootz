@@ -47,6 +47,8 @@ class PatientNoteModel {
 /// Supports flat JSON and envelopes (`data`, `patient`, `user`, `result`, etc.).
 class PatientModel {
   final String id;
+  /// Auth user id (`user` on API) — use for Firestore `patientId`, not [id].
+  final String userId;
   final String name;
   final String email;
   final int age;
@@ -57,9 +59,12 @@ class PatientModel {
   final String status;
   final List<PatientNoteModel> notes;
   final String? password;
+  /// Backend user id of the patient's assigned doctor (matches doctor JWT id).
+  final String? assignedDoctorId;
 
   const PatientModel({
     required this.id,
+    this.userId = '',
     required this.name,
     required this.email,
     required this.age,
@@ -70,6 +75,7 @@ class PatientModel {
     required this.status,
     this.notes = const [],
     this.password,
+    this.assignedDoctorId,
   });
 
   // ─── Deserialization ───────────────────────────────────────────────
@@ -80,6 +86,7 @@ class PatientModel {
 
     return PatientModel(
       id: _parseString(data['_id'] ?? data['id']),
+      userId: _parseUserId(data),
       name: _parseString(data['name']),
       email: _parseString(data['email']),
       age: _parseInt(data['age']),
@@ -90,7 +97,119 @@ class PatientModel {
       status: _parseString(data['status']),
       notes: _parseNotes(data['notes'] ?? data['doctorNotes']),
       password: _parseOptionalString(data['password'] ?? data['generatedPassword']),
+      assignedDoctorId: extractAssignedDoctorId(data),
     );
+  }
+
+  /// Firestore/API chat participant id (JWT `user`, not patient record `_id`).
+  static String _parseUserId(Map<String, dynamic> data) {
+    final user = data['user'];
+    if (user is Map) {
+      return _parseString(user['_id'] ?? user['id']);
+    }
+    final asString = _parseOptionalString(user);
+    if (asString != null) return asString;
+    return _parseString(data['userId']);
+  }
+
+  /// Prefer [userId] for chat; falls back to [id].
+  String get chatUserId => userId.isNotEmpty ? userId : id;
+
+  /// Reads assigned doctor id from API payloads (supports several field names).
+  static String? extractAssignedDoctorId(Map<String, dynamic> data) {
+    final raw = data['assignedDoctorId'] ??
+        data['assignedDoctor'] ??
+        data['doctorId'] ??
+        data['doctor'];
+    if (raw is Map) {
+      final nested = (raw['_id'] ?? raw['id'])?.toString().trim();
+      return nested == null || nested.isEmpty ? null : nested;
+    }
+    final id = raw?.toString().trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  /// Extracts assigned doctor id from any supported API envelope.
+  ///
+  /// When [patientId] is set, list responses are scanned for the row whose
+  /// `user` / `userId` / `id` matches the logged-in patient, then
+  /// `doctor._id` (or equivalent) is returned.
+  static String? extractAssignedDoctorIdFromResponse(
+    dynamic body, {
+    String? patientId,
+  }) {
+    if (body == null) return null;
+
+    final map = PatientResponseParser.extractPatientMap(body);
+    if (map != null) {
+      final fromMap = extractAssignedDoctorId(map);
+      if (fromMap != null) return fromMap;
+    }
+
+    for (final list in _extractCandidateLists(body)) {
+      for (final item in list) {
+        if (item is! Map) continue;
+        final record = Map<String, dynamic>.from(item);
+        if (patientId != null && !_recordMatchesPatient(record, patientId)) {
+          continue;
+        }
+        final doctorId = _doctorIdFromPatientRecord(record);
+        if (doctorId != null) return doctorId;
+      }
+    }
+
+    if (body is Map<String, dynamic>) {
+      return extractAssignedDoctorId(body);
+    }
+    return null;
+  }
+
+  static List<List<dynamic>> _extractCandidateLists(dynamic body) {
+    final lists = <List<dynamic>>[];
+    if (body is List) lists.add(body);
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      for (final key in const ['data', 'patients', 'results', 'items']) {
+        final value = map[key];
+        if (value is List) lists.add(value);
+      }
+    }
+    return lists;
+  }
+
+  static bool _recordMatchesPatient(
+    Map<String, dynamic> record,
+    String patientId,
+  ) {
+    final candidates = <String?>[
+      record['userId']?.toString(),
+      record['patientId']?.toString(),
+      record['_id']?.toString(),
+      record['id']?.toString(),
+      _userIdFromNested(record['user']),
+    ];
+    return candidates.any((id) => id != null && id == patientId);
+  }
+
+  static String? _userIdFromNested(Object? user) {
+    if (user is Map) {
+      final id = (user['_id'] ?? user['id'])?.toString().trim();
+      return id == null || id.isEmpty ? null : id;
+    }
+    final id = user?.toString().trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  static String? _doctorIdFromPatientRecord(Map<String, dynamic> record) {
+    final fromFields = extractAssignedDoctorId(record);
+    if (fromFields != null) return fromFields;
+
+    final doctor = record['doctor'];
+    if (doctor is Map) {
+      final id = (doctor['_id'] ?? doctor['id'])?.toString().trim();
+      if (id != null && id.isNotEmpty) return id;
+    }
+    return null;
   }
 
   /// Returns null when the JSON does not contain usable patient fields.
@@ -128,6 +247,7 @@ class PatientModel {
 
   PatientModel copyWith({
     String? id,
+    String? userId,
     String? name,
     String? email,
     int? age,
@@ -138,9 +258,11 @@ class PatientModel {
     String? status,
     List<PatientNoteModel>? notes,
     String? password,
+    String? assignedDoctorId,
   }) {
     return PatientModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       email: email ?? this.email,
       age: age ?? this.age,
@@ -151,6 +273,7 @@ class PatientModel {
       status: status ?? this.status,
       notes: notes ?? this.notes,
       password: password ?? this.password,
+      assignedDoctorId: assignedDoctorId ?? this.assignedDoctorId,
     );
   }
 

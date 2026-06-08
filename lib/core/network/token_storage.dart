@@ -8,6 +8,9 @@ class TokenStorage {
   static const String _userIdKey = 'user_id';
   static const String _roleKey = 'user_role';
 
+  static String _assignedDoctorKey(String patientId) =>
+      'assigned_doctor_id_$patientId';
+
   // ─── Token ─────────────────────────────────────────────────────────
 
   static Future<void> saveToken(String token) async {
@@ -47,6 +50,26 @@ class TokenStorage {
   static Future<String?> getRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_roleKey);
+  }
+
+  // ─── Assigned doctor (per patient, for Firestore chat sync) ───────
+
+  static Future<void> saveAssignedDoctorId(
+    String patientId,
+    String doctorId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_assignedDoctorKey(patientId), doctorId);
+  }
+
+  static Future<String?> getAssignedDoctorId(String patientId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_assignedDoctorKey(patientId));
+  }
+
+  static Future<void> removeAssignedDoctorId(String patientId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_assignedDoctorKey(patientId));
   }
 
   // ─── Clear All ─────────────────────────────────────────────────────

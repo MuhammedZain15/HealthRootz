@@ -9,6 +9,7 @@ class DoctorPatientsViewModel {
   Patient mapToUiPatient(new_api.PatientModel model) {
     return Patient(
       id: model.id,
+      userId: model.chatUserId,
       name: model.name,
       age: model.age,
       status: formatStatus(model.status),

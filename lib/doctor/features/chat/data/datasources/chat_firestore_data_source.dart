@@ -61,6 +61,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   static const String _mediaUrlField = 'mediaUrl';
   static const String _mediaTypeField = 'mediaType';
   static const String _fileNameField = 'fileName';
+  static const String _senderRoleField = 'senderRole';
 
   final FirebaseFirestore? _firestoreOverride;
   bool _initialized = false;
@@ -99,6 +100,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   ) {
     final data = doc.data() ?? <String, dynamic>{};
     final senderId = data[_senderIdField]?.toString() ?? '';
+    final senderRole = data[_senderRoleField]?.toString();
     final dateTime = _parseMessageDateTime(
       data[_timestampField] ?? data[_clientTimestampField],
     );
@@ -106,7 +108,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     return ChatMessage(
       id: doc.id,
       text: (data[_messageField] ?? data['text'] ?? '').toString(),
-      isMe: senderId == doctorId,
+      isMe: senderId == doctorId || senderRole == 'doctor',
       time: DateFormat.jm().format(dateTime),
       patientId: patientId,
       isRead: data['isRead'] as bool? ?? false,
@@ -188,7 +190,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     final rows = <({ChatUser user, int timestamp})>[];
 
     for (final patient in patients) {
-      final patientId = (patient['id'] ?? patient['_id'] ?? '').toString();
+      final patientId = _chatUserIdFromPatientMap(patient);
       if (patientId.isEmpty) continue;
 
       final name = (patient['patientName'] ?? patient['name'] ?? patientId)
@@ -259,6 +261,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     final payload = <String, dynamic>{
       _messageField: text,
       _senderIdField: senderId,
+      _senderRoleField: 'doctor',
       _clientTimestampField: DateTime.now().millisecondsSinceEpoch,
       _timestampField: FieldValue.serverTimestamp(),
       _chatIdField: chatId,
@@ -294,6 +297,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     final payload = <String, dynamic>{
       _messageField: fileName,
       _senderIdField: senderId,
+      _senderRoleField: 'doctor',
       _clientTimestampField: DateTime.now().millisecondsSinceEpoch,
       _timestampField: FieldValue.serverTimestamp(),
       _chatIdField: chatId,
@@ -441,6 +445,18 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     } on FirebaseException {
       return null;
     }
+  }
+
+  /// Firestore `patientId` is the auth user id (`user`), not patient `_id`.
+  String _chatUserIdFromPatientMap(Map<String, dynamic> patient) {
+    final user = patient['user'];
+    if (user is Map) {
+      final id = (user['_id'] ?? user['id'])?.toString().trim();
+      if (id != null && id.isNotEmpty) return id;
+    }
+    final userId = user?.toString().trim() ?? patient['userId']?.toString().trim();
+    if (userId != null && userId.isNotEmpty) return userId;
+    return (patient['id'] ?? patient['_id'] ?? '').toString();
   }
 
   String? _extractPatientName(Map<String, dynamic>? data) {
