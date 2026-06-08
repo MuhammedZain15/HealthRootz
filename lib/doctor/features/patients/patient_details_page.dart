@@ -343,7 +343,9 @@ class _PatientDetailsBody extends StatelessWidget {
 
   void _openPatientChat(BuildContext context) {
     final patientCubit = context.read<PatientCubit>();
-    DoctorChatSession.activePatientId = patient.id;
+    final chatPatientId =
+        patient.userId.isNotEmpty ? patient.userId : patient.id;
+    DoctorChatSession.activePatientId = chatPatientId;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -351,13 +353,13 @@ class _PatientDetailsBody extends StatelessWidget {
           value: patientCubit,
           child: ChatDetailPage(
             user: ChatUser(
-              id: patient.id,
+              id: chatPatientId,
               name: patient.name,
               phone: patient.phone,
               lastMessage: '',
               time: '',
             ),
-            patientId: patient.id,
+            patientId: chatPatientId,
           ),
         ),
       ),

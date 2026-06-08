@@ -61,6 +61,11 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 
   List<ChatUser> get chats => _filtered;
 
+  void _safeEmit(ChatListState state) {
+    if (isClosed) return;
+    emit(state);
+  }
+
   static Future<List<Map<String, dynamic>>> _defaultFetchDoctorPatients(
     String doctorId,
   ) async {
@@ -70,7 +75,9 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
       return patients
           .map(
             (patient) => <String, dynamic>{
-              'id': patient.id,
+              'id': patient.chatUserId,
+              '_id': patient.id,
+              'user': patient.userId,
               'name': patient.name,
               'patientName': patient.name,
               'phone': patient.phone,
@@ -88,21 +95,25 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
 
   Future<void> _startChatListStream() async {
     final doctorId = await TokenStorage.getUserId();
+    if (isClosed) return;
     if (doctorId == null || doctorId.isEmpty) {
-      emit(const ChatListError('Doctor id is missing.'));
+      _safeEmit(const ChatListError('Doctor id is missing.'));
       return;
     }
 
-    emit(const ChatListLoading());
+    _safeEmit(const ChatListLoading());
     await _chatListSub?.cancel();
+    if (isClosed) return;
     _chatListSub = _watchChatListUseCase(
       doctorId: doctorId,
       fetchPatients: () => _fetchDoctorPatients(doctorId),
     ).listen((result) {
-      result.fold((failure) => emit(ChatListError(failure.message)), (chats) {
+      if (isClosed) return;
+      result.fold((failure) => _safeEmit(ChatListError(failure.message)), (chats) {
+        if (isClosed) return;
         _chats = chats;
         _filtered = chats;
-        emit(ChatListLoaded(_chats, _filtered));
+        _safeEmit(ChatListLoaded(_chats, _filtered));
       });
     });
   }
@@ -122,7 +133,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
                     chat.lastMessage.toLowerCase().contains(search),
               )
               .toList(growable: false);
-    emit(ChatListLoaded(_chats, _filtered));
+    _safeEmit(ChatListLoaded(_chats, _filtered));
   }
 
   @override
@@ -144,6 +155,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
   @override
   Future<void> close() async {
     await _chatListSub?.cancel();
+    _chatListSub = null;
     await _sub.cancel();
     return super.close();
   }

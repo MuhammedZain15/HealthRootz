@@ -1,10 +1,16 @@
 // lib/patient/features/chat/data/datasources/chat_firestore_data_source.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:grad_project/core/network/api_client.dart';
+import 'package:grad_project/core/network/api_constants.dart';
+import 'package:grad_project/core/network/token_storage.dart';
 import 'package:grad_project/core/services/auth_service.dart';
 import 'package:grad_project/patient/features/chat/chat_model.dart';
 import 'package:grad_project/patient/features/chat/data/firebase/chat_firebase.dart';
+import 'package:grad_project/patient/features/chat/data/utils/chat_doctor_id.dart';
 import 'package:grad_project/patient/features/chat/data/utils/chat_id_helper.dart';
 import 'package:grad_project/patient/features/chat/patient_chat_session.dart';
+import 'package:grad_project/patient/features/patient/data/models/patient_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class ChatFirestoreDataSource {
@@ -40,8 +46,8 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     : _firestoreOverride = firestore;
 
   static const String _chatsCollection = 'chats';
+  /// Legacy prefs key (global); prefer [TokenStorage] per-patient cache.
   static const String _doctorIdPrefsKey = 'chat_doctor_id';
-  static const String _defaultDoctorId = 'dr_sarah_johnson';
   static const String _messageField = 'message';
   static const String _senderIdField = 'senderId';
   static const String _timestampField = 'timestamp';
@@ -49,6 +55,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   static const String _doctorIdField = 'doctorId';
   static const String _patientIdField = 'patientId';
   static const String _patientNameField = 'patientName';
+  static const String _senderRoleField = 'senderRole';
 
   final FirebaseFirestore? _firestoreOverride;
   final AuthService _authService = AuthService();
@@ -76,56 +83,186 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
   ) {
     final data = doc.data() ?? <String, dynamic>{};
     final senderId = data[_senderIdField]?.toString() ?? '';
+    final senderRole = data[_senderRoleField]?.toString();
     final timestamp = data[_timestampField];
     final DateTime dateTime = timestamp is Timestamp
         ? timestamp.toDate()
         : DateTime.now();
-    final isSender = senderId == patientId;
+    // Align bubble side with senderId or senderRole for two-way sync.
+    final isSender = senderId == patientId || senderRole == 'patient';
     return ChatMessage(
       id: doc.id,
       text: (data[_messageField] ?? data['text'] ?? '').toString(),
       isSender: isSender,
       timestamp: dateTime,
-      doctorName: isSender ? null : 'Dr. Sarah Johnson',
+      doctorName: isSender
+          ? null
+          : (data['doctorName']?.toString() ?? 'Your Doctor'),
       patientId: patientId,
       isRead: data['isRead'] as bool? ?? false,
     );
   }
 
+  /// Resolves the doctor id that must match the doctor app's [TokenStorage.getUserId].
+  ///
+  /// Order: in-memory session → per-patient cache → GET /patients/me →
+  /// GET /auth/profile → existing Firestore messages.
+  /// Never falls back to a hardcoded placeholder.
   @override
   Future<String?> resolveDoctorId(String patientId) async {
     await _ensureReady();
-    if (PatientChatSession.activeDoctorId != null &&
-        PatientChatSession.activeDoctorId!.isNotEmpty) {
-      return PatientChatSession.activeDoctorId;
+
+    String? resolved;
+
+    // 1. In-memory session (e.g. after a successful send in this app session).
+    if (isResolvableDoctorId(PatientChatSession.activeDoctorId)) {
+      resolved = PatientChatSession.activeDoctorId!.trim();
+    }
+
+    // 2. Per-patient cache (survives app restarts; keyed by patient id).
+    resolved ??= await _readCachedDoctorId(patientId);
+
+    // 3. Backend: patient's assigned doctor from GET /patients/me.
+    resolved ??= await _fetchAssignedDoctorFromPatientsMe(patientId);
+
+    // 4. Backend fallback: GET /auth/profile (some APIs expose doctorId there).
+    resolved ??= await _fetchAssignedDoctorFromProfile(patientId);
+
+    // 5. Firestore: reuse doctorId from an existing chat document.
+    resolved ??= await _doctorIdFromExistingMessages(patientId);
+
+    if (isResolvableDoctorId(resolved)) {
+      await _persistResolvedDoctorId(patientId, resolved!.trim());
+      debugPrint('Resolved doctor ID: $resolved (patient: $patientId)');
+      return resolved.trim();
+    }
+
+    debugPrint(
+      'Could not resolve doctor ID for patient $patientId. '
+      'Assign a doctor via the backend or send from doctor app first.',
+    );
+    return null;
+  }
+
+  Future<String?> _readCachedDoctorId(String patientId) async {
+    final perPatient = await TokenStorage.getAssignedDoctorId(patientId);
+    if (isResolvableDoctorId(perPatient)) {
+      return perPatient!.trim();
+    }
+    if (perPatient != null && !isResolvableDoctorId(perPatient)) {
+      await TokenStorage.removeAssignedDoctorId(patientId);
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_doctorIdPrefsKey);
-    if (stored != null && stored.isNotEmpty) {
-      PatientChatSession.activeDoctorId = stored;
-      return stored;
+    final legacyGlobal = prefs.getString(_doctorIdPrefsKey);
+    if (isResolvableDoctorId(legacyGlobal)) {
+      return legacyGlobal!.trim();
     }
+    if (legacyGlobal != null) {
+      await prefs.remove(_doctorIdPrefsKey);
+    }
+    return null;
+  }
 
+  Future<void> _persistResolvedDoctorId(
+    String patientId,
+    String doctorId,
+  ) async {
+    PatientChatSession.activeDoctorId = doctorId;
+    await TokenStorage.saveAssignedDoctorId(patientId, doctorId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_doctorIdPrefsKey, doctorId);
+  }
+
+  Future<String?> _fetchAssignedDoctorFromPatientsMe(String patientId) async {
+    try {
+      // Option A: GET /patients — find row where user matches logged-in JWT id.
+      final patientUserId = await TokenStorage.getUserId();
+      if (patientUserId != null && patientUserId.isNotEmpty) {
+        final response = await ApiClient.instance.dio.get(ApiConstants.patients);
+        final body = response.data;
+        final list = body is Map && body['data'] is List
+            ? body['data'] as List
+            : body is List
+            ? body
+            : <dynamic>[];
+
+        for (final item in list) {
+          if (item is! Map) continue;
+          final record = Map<String, dynamic>.from(item);
+          final user = record['user'];
+          final userId = user is Map
+              ? (user['_id'] ?? user['id'])?.toString()
+              : user?.toString();
+          if (userId != patientUserId) continue;
+
+          final doctor = record['doctor'];
+          if (doctor is Map) {
+            final resolved =
+                (doctor['_id'] ?? doctor['id'])?.toString().trim();
+            if (isResolvableDoctorId(resolved)) {
+              debugPrint('Resolved doctor from API: $resolved');
+              return resolved;
+            }
+          }
+        }
+      }
+
+      // Option B: GET /auth/profile — doctor._id on profile payload.
+      final profileResponse =
+          await ApiClient.instance.dio.get(ApiConstants.profile);
+      final profileBody = profileResponse.data;
+      if (profileBody is Map) {
+        final doctor = profileBody['doctor'] ?? profileBody['data']?['doctor'];
+        if (doctor is Map) {
+          final resolved = (doctor['_id'] ?? doctor['id'])?.toString().trim();
+          if (isResolvableDoctorId(resolved)) {
+            debugPrint('Resolved doctor from API: $resolved');
+            return resolved;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to resolve doctor from patients/profile API: $e');
+    }
+    return null;
+  }
+
+  Future<String?> _fetchAssignedDoctorFromProfile(String patientId) async {
+    try {
+      final response = await ApiClient.instance.dio.get(ApiConstants.profile);
+      final doctorId = PatientModel.extractAssignedDoctorIdFromResponse(
+        response.data,
+        patientId: patientId,
+      );
+      if (isResolvableDoctorId(doctorId)) {
+        debugPrint('Assigned doctor from GET ${ApiConstants.profile}: $doctorId');
+        return doctorId!.trim();
+      }
+    } catch (e) {
+      debugPrint('GET ${ApiConstants.profile} failed: $e');
+    }
+    return null;
+  }
+
+  Future<String?> _doctorIdFromExistingMessages(String patientId) async {
     final snapshot = await _chatsRef
         .where(_patientIdField, isEqualTo: patientId)
-        .limit(1)
+        .limit(20)
         .get();
     for (final doc in snapshot.docs) {
       final data = doc.data();
-      final doctorId =
-          data[_doctorIdField]?.toString() ??
-          ChatIdHelper.doctorIdFromChatId(doc.id, patientId);
-      if (doctorId != null) {
-        PatientChatSession.activeDoctorId = doctorId;
-        await prefs.setString(_doctorIdPrefsKey, doctorId);
-        return doctorId;
+      final candidate = data[_doctorIdField]?.toString().trim() ??
+          ChatIdHelper.doctorIdFromChatId(
+            data[_chatIdField]?.toString() ?? doc.id,
+            patientId,
+          );
+      if (isResolvableDoctorId(candidate)) {
+        debugPrint('Doctor ID from existing Firestore message: $candidate');
+        return candidate!.trim();
       }
     }
-
-    PatientChatSession.activeDoctorId = _defaultDoctorId;
-    await prefs.setString(_doctorIdPrefsKey, _defaultDoctorId);
-    return _defaultDoctorId;
+    return null;
   }
 
   @override
@@ -134,7 +271,9 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     required String patientId,
   }) async* {
     await _ensureReady();
+    // Same compound filter as doctor app so both sides read the same documents.
     yield* _chatsRef
+        .where(_doctorIdField, isEqualTo: doctorId)
         .where(_patientIdField, isEqualTo: patientId)
         .snapshots()
         .map((snapshot) {
@@ -153,9 +292,10 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     required String text,
   }) async {
     await _ensureReady();
-    PatientChatSession.activeDoctorId = doctorId;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_doctorIdPrefsKey, doctorId);
+    if (!isResolvableDoctorId(doctorId)) {
+      throw StateError(kDoctorAssignmentMissingMessage);
+    }
+    await _persistResolvedDoctorId(patientId, doctorId.trim());
 
     final chatId = _chatId(doctorId, patientId);
     final messageRef = _chatsRef.doc();
@@ -163,6 +303,7 @@ class ChatFirestoreDataSourceImpl implements ChatFirestoreDataSource {
     final payload = <String, dynamic>{
       _messageField: text,
       _senderIdField: senderId,
+      _senderRoleField: 'patient',
       _timestampField: FieldValue.serverTimestamp(),
       _chatIdField: chatId,
       _doctorIdField: doctorId,

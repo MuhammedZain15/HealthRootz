@@ -1,5 +1,7 @@
 class Patient {
   final String id;
+  /// JWT user id for Firestore chat (`user` on API), not patient record [id].
+  final String userId;
   final String name;
   final int age;
   final String status;
@@ -17,6 +19,7 @@ class Patient {
 
   Patient({
     required this.id,
+    this.userId = '',
     required this.name,
     required this.age,
     required this.status,
