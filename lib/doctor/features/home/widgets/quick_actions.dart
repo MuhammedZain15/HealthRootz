@@ -5,7 +5,9 @@ import 'package:grad_project/doctor/features/home/booked_appointments_page.dart'
 import 'package:grad_project/doctor/features/home/add_patient_page.dart';
 
 class QuickActions extends StatelessWidget {
-  const QuickActions({super.key});
+  final VoidCallback? onGenerateReportTapped;
+  
+  const QuickActions({super.key, this.onGenerateReportTapped});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,7 @@ class QuickActions extends StatelessWidget {
           const SizedBox(height: 12),
           _buildActionButton(
             label: "Generate Report",
-            onPressed: () {},
+            onPressed: onGenerateReportTapped ?? () {},
             isPrimary: false,
           ),
         ],

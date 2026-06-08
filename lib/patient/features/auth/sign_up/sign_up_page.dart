@@ -19,11 +19,14 @@ class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _ageCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
-  final TextEditingController _medicalCtrl = TextEditingController();
 
-  String? _role;
+  // Doctor specific fields
+  final TextEditingController _specialtyCtrl = TextEditingController();
+  final TextEditingController _licenseCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _addressCtrl = TextEditingController();
+
   bool _obscure = true;
   bool _isLoading = false;
 
@@ -31,9 +34,11 @@ class _SignUpPageState extends State<SignUpPage> {
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
-    _ageCtrl.dispose();
     _passwordCtrl.dispose();
-    _medicalCtrl.dispose();
+    _specialtyCtrl.dispose();
+    _licenseCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
     super.dispose();
   }
 
@@ -47,9 +52,11 @@ class _SignUpPageState extends State<SignUpPage> {
       name: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
-      role: _role!,
-      age: int.tryParse(_ageCtrl.text.trim()),
-      medicalHistory: _medicalCtrl.text.trim().isNotEmpty ? _medicalCtrl.text.trim() : null,
+      role: 'doctor',
+      specialty: _specialtyCtrl.text.trim(),
+      licenseNumber: _licenseCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim(),
+      address: _addressCtrl.text.trim(),
     );
 
     setState(() => _isLoading = false);
@@ -58,14 +65,16 @@ class _SignUpPageState extends State<SignUpPage> {
 
     if (resultState.status == AuthStatus.authenticated) {
       if (authCubit.isDoctor) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const DoctorAppLayout()),
+          (route) => false,
         );
       } else {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const AppLayout()),
+          (route) => false,
         );
       }
     } else {
@@ -177,36 +186,6 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Age
-                        const Text('Age *', style: TextStyle(fontSize: 13)),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          textInputAction: TextInputAction.next,
-                          controller: _ageCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: '25',
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Enter age';
-                            }
-                            final n = int.tryParse(v.trim());
-                            if (n == null || n <= 0) return 'Enter a valid age';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-
                         // Password
                         const Text(
                           'Password *',
@@ -246,56 +225,89 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Role dropdown instead of confirm password
-                        const Text('Role *', style: TextStyle(fontSize: 13)),
+                        // Specialty
+                        const Text('Specialty *', style: TextStyle(fontSize: 13)),
                         const SizedBox(height: 6),
-                        DropdownButtonFormField<String>(
-                          initialValue: _role,
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'patient',
-                              child: Text('Patient'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'doctor',
-                              child: Text('Doctor'),
-                            ),
-                          ],
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _specialtyCtrl,
                           decoration: InputDecoration(
+                            hintText: 'Neurology, Cardiology, etc.',
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 4,
+                              vertical: 14,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          onChanged: (v) => setState(() => _role = v),
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? 'Select a role' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Enter specialty'
+                              : null,
                         ),
                         const SizedBox(height: 12),
 
-                        // Medical details (optional)
-                        const Text(
-                          'Medical Details (Optional)',
-                          style: TextStyle(fontSize: 13),
-                        ),
+                        // License Number
+                        const Text('License Number *', style: TextStyle(fontSize: 13)),
                         const SizedBox(height: 6),
                         TextFormField(
-                          textInputAction: TextInputAction.done,
-                          controller: _medicalCtrl,
-                          maxLines: 4,
+                          textInputAction: TextInputAction.next,
+                          controller: _licenseCtrl,
                           decoration: InputDecoration(
-                            hintText:
-                                'Any relevant medical conditions or information...',
+                            hintText: 'LIC-123456',
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 12,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Enter license number'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Phone
+                        const Text('Phone Number', style: TextStyle(fontSize: 13)),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _phoneCtrl,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            hintText: '+1 234 567 890',
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Address
+                        const Text('Clinic Address', style: TextStyle(fontSize: 13)),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          textInputAction: TextInputAction.done,
+                          controller: _addressCtrl,
+                          decoration: InputDecoration(
+                            hintText: '123 Medical Center, City',
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),

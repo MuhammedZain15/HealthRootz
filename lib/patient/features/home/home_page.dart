@@ -16,7 +16,9 @@ import 'appointment/cubit/patient_booking_cubit.dart';
 import 'appointment/select_date_time_screen.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  final VoidCallback? onNavigateToAlerts;
+
+  const HomePage({super.key, this.onNavigateToAlerts});
 
   Future<void> _openBooking(BuildContext context) async {
     final patientCubit = context.read<PatientCubit>();
@@ -219,7 +221,7 @@ class HomePage extends StatelessWidget {
               icon: Icons.notifications_outlined,
               color: const Color(0xFFDC2626),
               bgColor: const Color(0xFFFEE2E2),
-              onTap: () {},
+              onTap: onNavigateToAlerts ?? () {},
             ),
             QuickActionCard(
               title: 'AI Chat',

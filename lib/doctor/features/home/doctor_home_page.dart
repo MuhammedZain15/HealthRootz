@@ -11,8 +11,13 @@ import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
 class DoctorHomePage extends StatefulWidget {
   final String doctorName;
+  final VoidCallback? onNavigateToReports;
 
-  const DoctorHomePage({super.key, required this.doctorName});
+  const DoctorHomePage({
+    super.key, 
+    required this.doctorName,
+    this.onNavigateToReports,
+  });
 
   @override
   State<DoctorHomePage> createState() => _DoctorHomePageState();
@@ -165,9 +170,11 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                     SizedBox(height: screenHeight * 0.03),
                                     const AnomalyChart(),
                                     SizedBox(height: screenHeight * 0.03),
-                                    const RecentAlerts(),
+                                    RecentAlerts(alerts: state.recentAlerts ?? []),
                                     SizedBox(height: screenHeight * 0.03),
-                                    const QuickActions(),
+                                    QuickActions(
+                                      onGenerateReportTapped: widget.onNavigateToReports,
+                                    ),
                                     SizedBox(height: screenHeight * 0.05),
                                   ],
                                 ),

@@ -1,8 +1,11 @@
+import 'alert_model.dart';
+
 /// Dashboard stats — maps to GET /api/dashboard/stats.
 class DashboardSummary {
   final DashboardStats? stats;
+  final List<AlertModel>? recentAlerts;
 
-  DashboardSummary({this.stats});
+  DashboardSummary({this.stats, this.recentAlerts});
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
     final data = json['data'] is Map
@@ -14,12 +17,18 @@ class DashboardSummary {
       stats = DashboardStats.fromJson(
         Map<String, dynamic>.from(data['stats'] as Map),
       );
-    } else if (data.containsKey('totalPatients') ||
-        data.containsKey('totalAlerts')) {
+    } else {
       stats = DashboardStats.fromJson(data);
     }
 
-    return DashboardSummary(stats: stats);
+    List<AlertModel>? recentAlerts;
+    if (data['recentAlerts'] is List) {
+      recentAlerts = (data['recentAlerts'] as List)
+          .map((e) => AlertModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+
+    return DashboardSummary(stats: stats, recentAlerts: recentAlerts);
   }
 }
 
@@ -44,10 +53,10 @@ class DashboardStats {
     }
 
     return DashboardStats(
-      totalPatients: parseInt(json['totalPatients']),
-      totalAlerts: parseInt(json['totalAlerts']),
-      totalAppointments: parseInt(json['totalAppointments']),
-      totalReports: parseInt(json['totalReports']),
+      totalPatients: parseInt(json['totalPatients']) ?? parseInt(json['patients']),
+      totalAlerts: parseInt(json['totalAlerts']) ?? parseInt(json['activeAlerts']),
+      totalAppointments: parseInt(json['totalAppointments']) ?? parseInt(json['pendingAppointments']),
+      totalReports: parseInt(json['totalReports']) ?? parseInt(json['criticalCases']),
     );
   }
 }

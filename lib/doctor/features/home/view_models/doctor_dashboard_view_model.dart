@@ -14,6 +14,7 @@ class DoctorDashboardViewModel {
         return (
           current.copyWith(
             stats: result.data!.stats,
+            recentAlerts: result.data!.recentAlerts,
             isLoading: false,
             clearError: true,
           ),

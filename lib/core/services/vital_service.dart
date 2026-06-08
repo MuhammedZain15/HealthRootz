@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+// removed unused import
 
 import '../models/vital_model.dart';
 import '../network/api_client.dart';

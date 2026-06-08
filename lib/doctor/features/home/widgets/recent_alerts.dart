@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:grad_project/core/models/alert_model.dart';
 
 class RecentAlerts extends StatelessWidget {
-  const RecentAlerts({super.key});
+  final List<AlertModel> alerts;
+
+  const RecentAlerts({super.key, required this.alerts});
 
   @override
   Widget build(BuildContext context) {
+    if (alerts.isEmpty) {
+      return const SizedBox();
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -28,29 +35,41 @@ class RecentAlerts extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _buildAlertItem(
-            name: "John Smith",
-            message: "Blood pressure elevated: 180/110",
-            time: "5 mins ago",
-            iconColor: Colors.red,
-            bgColor: Colors.red.withOpacity(0.05),
-          ),
-          const SizedBox(height: 12),
-          _buildAlertItem(
-            name: "Sarah Johnson",
-            message: "Heart rate abnormal: 125 bpm",
-            time: "12 mins ago",
-            iconColor: Colors.orange,
-            bgColor: Colors.orange.withOpacity(0.05),
-          ),
-          const SizedBox(height: 12),
-          _buildAlertItem(
-            name: "Michael Brown",
-            message: "Temperature spike detected",
-            time: "1 hour ago",
-            iconColor: Colors.blue,
-            bgColor: Colors.blue.withOpacity(0.05),
-          ),
+          ...alerts.take(3).map((alert) {
+            Color iconColor;
+            Color bgColor;
+
+            final type = alert.type?.toLowerCase() ?? '';
+            if (type.contains('critical') || type.contains('high')) {
+              iconColor = Colors.red;
+              bgColor = Colors.red.withOpacity(0.05);
+            } else if (type.contains('warning') || type.contains('abnormal')) {
+              iconColor = Colors.orange;
+              bgColor = Colors.orange.withOpacity(0.05);
+            } else {
+              iconColor = Colors.blue;
+              bgColor = Colors.blue.withOpacity(0.05);
+            }
+
+            String timeString = "Just now";
+            if (alert.createdAt != null) {
+              try {
+                final date = DateTime.parse(alert.createdAt!).toLocal();
+                timeString = "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+              } catch (_) {}
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: _buildAlertItem(
+                name: alert.patientName ?? "Unknown Patient",
+                message: alert.message ?? "No message",
+                time: timeString,
+                iconColor: iconColor,
+                bgColor: bgColor,
+              ),
+            );
+          }),
         ],
       ),
     );

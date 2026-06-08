@@ -43,11 +43,13 @@ class _AppLayoutContent extends StatefulWidget {
 class _AppLayoutState extends State<_AppLayoutContent> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    HistoryPage(),
-    AlertsPage(),
-    ProfilePage(),
+  List<Widget> get _pages => [
+    HomePage(
+      onNavigateToAlerts: () => setState(() => _selectedIndex = 2),
+    ),
+    const HistoryPage(),
+    const AlertsPage(),
+    const ProfilePage(),
   ];
 
   @override

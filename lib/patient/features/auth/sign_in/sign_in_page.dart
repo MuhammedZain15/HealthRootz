@@ -49,14 +49,16 @@ class _SignInPageState extends State<SignInPage> {
 
     final authCubit = context.read<AuthCubit>();
     if (authCubit.isDoctor) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const DoctorAppLayout()),
+        (route) => false,
       );
     } else {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const AppLayout()),
+        (route) => false,
       );
     }
   }

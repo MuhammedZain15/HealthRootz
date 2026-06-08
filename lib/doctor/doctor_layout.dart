@@ -49,7 +49,10 @@ class _AppLayoutState extends State<_DoctorAppLayoutContent> {
     final doctorName = user?.name ?? 'Doctor';
 
     final List<Widget> pages = [
-      DoctorHomePage(doctorName: doctorName),
+      DoctorHomePage(
+        doctorName: doctorName,
+        onNavigateToReports: () => _onItemTapped(3),
+      ),
       const PatientPage(),
       const DoctorAlertPage(),
       const ReportsPage(),
