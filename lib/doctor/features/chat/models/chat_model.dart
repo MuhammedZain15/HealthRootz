@@ -7,6 +7,9 @@ class ChatUser {
   final int unreadCount;
   final bool isActive;
   final String? phone;
+  /// API patient record ID — use this to navigate to [PatientDetailsPage].
+  /// Distinct from [id] which is the Firestore/chat user UID.
+  final String patientRecordId;
 
   const ChatUser({
     required this.id,
@@ -16,6 +19,7 @@ class ChatUser {
     this.unreadCount = 0,
     this.isActive = false,
     this.phone,
+    this.patientRecordId = '',
   });
 
   factory ChatUser.fromJson(Map<String, Object?> json) {
@@ -27,6 +31,8 @@ class ChatUser {
       unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
       isActive: json['isActive'] as bool? ?? false,
       phone: json['phone']?.toString(),
+      patientRecordId:
+          (json['patientRecordId'] ?? json['_id'] ?? '').toString(),
     );
   }
 
@@ -39,6 +45,7 @@ class ChatUser {
       'unreadCount': unreadCount,
       'isActive': isActive,
       'phone': phone,
+      'patientRecordId': patientRecordId,
     };
   }
 }

@@ -88,31 +88,36 @@ class _ChatViewState extends State<ChatView> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: InkWell(
           onTap: () => Navigator.pop(context),
-          child: Icon(Icons.arrow_back_ios, color: const Color(0xFF0F172A)),
+          child: Icon(Icons.arrow_back_ios, color: onSurface),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Messages',
               style: TextStyle(
-                color: Color(0xFF0F172A),
+                color: onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
               ),
             ),
             Text(
               'Chat with your doctor or AI assistant',
-              style: TextStyle(color: const Color(0xff6B7280), fontSize: 14),
+              style: TextStyle(
+                color: onSurface.withValues(alpha: 0.6),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.cardColor,
         elevation: 0,
         toolbarHeight: 80,
         automaticallyImplyLeading: false,
@@ -146,7 +151,7 @@ class _ChatViewState extends State<ChatView> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

@@ -52,18 +52,20 @@ class _AlertsPageState extends State<AlertsPage> {
           }
         },
         builder: (context, state) {
+          final theme = Theme.of(context);
           return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
+            backgroundColor: theme.scaffoldBackgroundColor,
             appBar: AppBar(
-              title: const Text(
+              title: Text(
                 'Alerts',
                 style: TextStyle(
-                  color: Color(0xFF1E293B),
+                  color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 24,
                 ),
               ),
-              backgroundColor: Colors.white,
+              backgroundColor:
+                  theme.appBarTheme.backgroundColor ?? theme.cardColor,
               elevation: 0,
               centerTitle: false,
             ),
@@ -111,10 +113,14 @@ class _AlertsPageState extends State<AlertsPage> {
     final alerts = state.activeAlerts;
 
     if (alerts.isEmpty && !state.isLoading) {
-      return const Center(
+      return Center(
         child: Text(
           'No active alerts',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: 0.5,
+                ),
+          ),
         ),
       );
     }

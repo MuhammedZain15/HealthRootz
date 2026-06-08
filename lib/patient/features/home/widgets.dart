@@ -19,16 +19,17 @@ class QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color == Colors.white ? AppColors.skyBlue : Colors.white,
+          color: color == Colors.white ? AppColors.skyBlue : theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -56,7 +57,9 @@ class QuickActionCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: color == Colors.white ? Colors.white : Colors.black87,
+                color: color == Colors.white
+                    ? Colors.white
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -90,23 +93,24 @@ class SensorReadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onStartMeasurement,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white, // app_colors.dart might have specific background
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.05),
+              color: Colors.blue.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 4),
               spreadRadius: 2,
             ),
           ],
-          border: Border.all(color: Colors.blue.withOpacity(0.1), width: 1),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.1), width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,10 +148,10 @@ class SensorReadingCard extends StatelessWidget {
                           children: [
                             Text(
                               value,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -181,7 +185,7 @@ class SensorReadingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            Container(height: 1, color: const Color(0xFFF1F5F9)),
+            Container(height: 1, color: theme.dividerColor),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -258,20 +262,21 @@ class RecentMeasurementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -290,10 +295,10 @@ class RecentMeasurementCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),

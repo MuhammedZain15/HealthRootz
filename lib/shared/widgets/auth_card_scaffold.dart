@@ -19,8 +19,9 @@ class AuthCardScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xffF1F7FF),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Stack(
           children: [
@@ -39,7 +40,7 @@ class AuthCardScaffold extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Card(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -63,7 +64,8 @@ class AuthCardScaffold extends StatelessWidget {
                               subtitle!,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                                 height: 1.4,
                               ),
                             ),

@@ -80,7 +80,7 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: BlocBuilder<PatientVitalsCubit, PatientVitalsState>(
           bloc: _vitalsCubit,
@@ -110,12 +110,12 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'History',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -123,7 +123,8 @@ class _HistoryPageState extends State<HistoryPage> {
                         'View all your sensor readings and appointments',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -404,14 +405,15 @@ class _HistoryFilterTabsWithReports extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tabs = ['All', 'Sensors', 'Visits', 'Reports'];
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -434,7 +436,9 @@ class _HistoryFilterTabsWithReports extends StatelessWidget {
                   tabs[i],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: selected ? Colors.white : Colors.grey[600],
+                    color: selected
+                        ? Colors.white
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontWeight:
                         selected ? FontWeight.bold : FontWeight.w500,
                     fontSize: 13,
@@ -460,17 +464,18 @@ class _ReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final df = DateFormat('dd MMM yyyy');
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: theme.dividerColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -504,10 +509,10 @@ class _ReportCard extends StatelessWidget {
                 children: [
                   Text(
                     report.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
-                      color: Color(0xFF111827),
+                      color: theme.colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -578,12 +583,12 @@ class _ReportsEmptyView extends StatelessWidget {
                 size: 36, color: Color(0xFFD1D5DB)),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No reports yet',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 16,
-              color: Color(0xFF374151),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 6),
@@ -612,11 +617,11 @@ class _ReportsErrorView extends StatelessWidget {
           const Icon(Icons.cloud_off_outlined,
               size: 48, color: Color(0xFFD1D5DB)),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Could not load reports',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: Color(0xFF374151),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 6),

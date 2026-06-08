@@ -23,11 +23,11 @@ class HistoryListItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -44,7 +44,7 @@ class HistoryListItem extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.skyBlue.withOpacity(0.1),
+                        color: AppColors.skyBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.favorite_rounded, color: AppColors.skyBlue, size: 24),
@@ -103,7 +103,7 @@ class HistoryListItem extends StatelessWidget {
   Widget _buildVitalMetric(IconData icon, String label, String value, Color color) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: color.withOpacity(0.7)),
+        Icon(icon, size: 16, color: color.withValues(alpha: 0.7)),
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,

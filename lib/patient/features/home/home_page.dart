@@ -56,7 +56,7 @@ class HomePage extends StatelessWidget {
         PatientAuthRedirect.handlePatientError(context, state);
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -99,16 +99,20 @@ class HomePage extends StatelessWidget {
               ),
             Text(
               greeting,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Track your health metrics and stay informed',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: 0.6),
+              ),
             ),
           ],
         );
@@ -116,16 +120,16 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon) {
+  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Icon(icon, color: AppColors.skyBlue),
@@ -136,7 +140,7 @@ class HomePage extends StatelessWidget {
   Widget _buildReadings(BuildContext context) {
     return Column(
       children: [
-        _buildSectionTitle('Latest Readings', Icons.show_chart),
+        _buildSectionTitle(context, 'Latest Readings', Icons.show_chart),
         const SizedBox(height: 16),
         SensorReadingCard(
           title: 'EMG Activity',
@@ -178,12 +182,12 @@ class HomePage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Quick Actions',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -227,7 +231,7 @@ class HomePage extends StatelessWidget {
               title: 'AI Chat',
               icon: Icons.chat_bubble_outline,
               color: AppColors.skyBlue,
-              bgColor: Colors.white12,
+              bgColor: AppColors.skyBlue.withValues(alpha: 0.12),
               onTap: () => _openAiChat(context),
             ),
           ],
@@ -236,18 +240,18 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentMeasurements() {
+  Widget _buildRecentMeasurements(BuildContext context) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Recent Measurements',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             TextButton(
@@ -293,7 +297,7 @@ class HomePage extends StatelessWidget {
         const SizedBox(height: 32),
         _buildQuickActions(context),
         const SizedBox(height: 32),
-        _buildRecentMeasurements(),
+        _buildRecentMeasurements(context),
         const SizedBox(height: 20),
       ],
     );
@@ -315,7 +319,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   _buildReadings(context),
                   const SizedBox(height: 32),
-                  _buildRecentMeasurements(),
+                  _buildRecentMeasurements(context),
                 ],
               ),
             ),
