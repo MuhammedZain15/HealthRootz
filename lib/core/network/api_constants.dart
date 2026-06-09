@@ -46,4 +46,9 @@ class ApiConstants {
   // ─── Vitals ────────────────────────────────────────────────────────
   static const String vitals = '/vitals';
   static String vitalById(String id) => '/vitals/$id';
+  // ─── Devices ───────────────────────────────────────────────────────
+  static const String devices = '/devices';
+  static String startDevice(String id) => '/devices/start/$id';
+  static String devicesData() => '/devices/data';
+  static String devicesCheck() => '/devices/check';
 }

@@ -1,52 +1,208 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:grad_project/core/cubit/auth_cubit.dart';
-import 'package:grad_project/patient/features/ai_chat/ai_sessions_screen.dart';
-import 'package:grad_project/patient/features/home/blood_oxygen_screen.dart';
-import 'package:grad_project/patient/features/home/doctor_notes/doctor_notes_screen.dart';
-import 'package:grad_project/patient/features/home/emg_screen.dart';
-import 'package:grad_project/app_colors.dart';
-import 'package:grad_project/patient/features/home/widgets.dart';
-import 'package:grad_project/patient/features/patient/utils/patient_auth_redirect.dart';
+import 'dart:math';
+
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_state.dart';
 import 'package:grad_project/shared/widgets/responsive_layout.dart';
-import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
-import 'appointment/cubit/patient_booking_cubit.dart';
-import 'appointment/select_date_time_screen.dart';
 
-class HomePage extends StatelessWidget {
+import 'package:grad_project/core/services/device_service.dart';
+import 'package:grad_project/core/services/vital_service.dart';
+import 'package:grad_project/patient/features/home/home_components.dart';
+import 'package:grad_project/patient/features/patient/utils/patient_auth_redirect.dart';
+
+class HomePage extends StatefulWidget {
   final VoidCallback? onNavigateToAlerts;
 
   const HomePage({super.key, this.onNavigateToAlerts});
 
-  Future<void> _openBooking(BuildContext context) async {
-    final patientCubit = context.read<PatientCubit>();
-    final appointmentsCubit = context.read<PatientAppointmentsCubit>();
-    final bookingCubit = PatientBookingCubit(patientCubit);
-    await bookingCubit.initializeBooking();
-    if (!context.mounted) return;
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: bookingCubit),
-            BlocProvider.value(value: patientCubit),
-            BlocProvider.value(value: appointmentsCubit),
-          ],
-          child: const SelectDateTimeScreen(),
-        ),
-      ),
-    );
+class _HomePageState extends State<HomePage> {
+  bool _isMeasuringEmg = false;
+  bool _isMeasuringOxy = false;
+
+  String _emgValue = '--';
+  String _emgTime = '--';
+  String _oxValue = '--';
+  String _oxTime = '--';
+
+  DateTime? _lastVitalTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLatestVitals();
   }
 
-  void _openAiChat(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AiSessionsScreen()),
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> _loadLatestVitals() async {
+    try {
+      final resp = await VitalService().getAllVitals();
+      if (resp.success && resp.data != null && resp.data!.isNotEmpty) {
+        final vitals = resp.data!;
+        vitals.sort((a, b) {
+          final aTime = a.createdAt ?? '';
+          final bTime = b.createdAt ?? '';
+          try {
+            return DateTime.parse(bTime).compareTo(DateTime.parse(aTime));
+          } catch (_) {
+            return 0;
+          }
+        });
+        final latest = vitals.first;
+        setState(() {
+          _emgValue = latest.heartRate != null
+              ? '${latest.heartRate} bpm'
+              : '--';
+          try {
+            _emgTime = latest.createdAt != null
+                ? TimeOfDay.fromDateTime(
+                    DateTime.parse(latest.createdAt!),
+                  ).format(context)
+                : '--';
+          } catch (_) {
+            _emgTime = latest.createdAt ?? '--';
+          }
+          _oxValue = latest.oxygenLevel != null
+              ? '${latest.oxygenLevel} %'
+              : _oxValue;
+          _oxTime = _emgTime;
+          try {
+            _lastVitalTime = latest.createdAt != null
+                ? DateTime.parse(latest.createdAt!).toUtc()
+                : null;
+          } catch (_) {
+            _lastVitalTime = null;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _startMeasurement(String deviceId, String sensorType) async {
+    setState(() {
+      if (sensorType == 'emg') _isMeasuringEmg = true;
+      if (sensorType == 'oxygen') _isMeasuringOxy = true;
+    });
+
+    final patientState = context.read<PatientCubit>().state;
+    final patientId = patientState is PatientLoaded
+        ? patientState.patient.id
+        : null;
+    final code = (Random().nextInt(900000) + 100000).toString();
+
+    final startResp = await DeviceService.instance.startDevice(
+      deviceId,
+      patientId: patientId,
+      code: code,
     );
+    if (!mounted) return;
+    if (!startResp.success) {
+      setState(() {
+        _isMeasuringEmg = false;
+        _isMeasuringOxy = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to start device: ${startResp.message ?? 'unknown'}',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Poll for new vitals (max ~20s)
+    bool found = false;
+    for (int attempt = 0; attempt < 10; attempt++) {
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final resp = await VitalService().getAllVitals();
+        if (resp.success && resp.data != null && resp.data!.isNotEmpty) {
+          final vitals = resp.data!;
+          vitals.sort((a, b) {
+            final aTime = a.createdAt ?? '';
+            final bTime = b.createdAt ?? '';
+            try {
+              return DateTime.parse(bTime).compareTo(DateTime.parse(aTime));
+            } catch (_) {
+              return 0;
+            }
+          });
+          final latest = vitals.first;
+          DateTime? latestTime;
+          try {
+            latestTime = latest.createdAt != null
+                ? DateTime.parse(latest.createdAt!).toUtc()
+                : null;
+          } catch (_) {
+            latestTime = null;
+          }
+
+          final hasNew =
+              latestTime != null &&
+              (_lastVitalTime == null || latestTime.isAfter(_lastVitalTime!));
+          final hasSensorValue =
+              (sensorType == 'emg' && latest.heartRate != null) ||
+              (sensorType == 'oxygen' && latest.oxygenLevel != null);
+
+          if (hasNew && hasSensorValue) {
+            setState(() {
+              if (sensorType == 'emg') {
+                _emgValue = latest.heartRate != null
+                    ? '${latest.heartRate} bpm'
+                    : _emgValue;
+                try {
+                  _emgTime = latest.createdAt != null
+                      ? TimeOfDay.fromDateTime(
+                          DateTime.parse(latest.createdAt!),
+                        ).format(context)
+                      : _emgTime;
+                } catch (_) {}
+              }
+              if (sensorType == 'oxygen') {
+                _oxValue = latest.oxygenLevel != null
+                    ? '${latest.oxygenLevel} %'
+                    : _oxValue;
+                try {
+                  _oxTime = latest.createdAt != null
+                      ? TimeOfDay.fromDateTime(
+                          DateTime.parse(latest.createdAt!),
+                        ).format(context)
+                      : _oxTime;
+                } catch (_) {}
+              }
+              _lastVitalTime = latestTime ?? _lastVitalTime;
+            });
+            found = true;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isMeasuringEmg = false;
+      _isMeasuringOxy = false;
+    });
+
+    if (found) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('New reading received')));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No new data received')));
+    }
   }
 
   @override
@@ -71,220 +227,33 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return BlocBuilder<PatientCubit, PatientState>(
-      builder: (context, state) {
-        String greeting = 'Welcome back';
-        if (state is PatientLoaded) {
-          final name = state.patient.name.trim();
-          if (name.isNotEmpty) {
-            greeting = 'Welcome back, $name';
-          }
-        } else if (state is PatientLoading || state is PatientInitial) {
-          greeting = 'Welcome back...';
-        } else if (state is PatientError) {
-          final authName = context.read<AuthCubit>().state.user?.name;
-          if (authName != null && authName.isNotEmpty) {
-            greeting = 'Welcome back, $authName';
-          }
-        }
+  Widget _buildHeader() => const HomeHeader();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (state is PatientLoading || state is PatientInitial)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-            Text(
-              greeting,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Track your health metrics and stay informed',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface
-                    .withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Icon(icon, color: AppColors.skyBlue),
-      ],
-    );
-  }
+  // Section title is provided by `SectionTitle` in `home_components.dart`.
 
   Widget _buildReadings(BuildContext context) {
-    return Column(
-      children: [
-        _buildSectionTitle(context, 'Latest Readings', Icons.show_chart),
-        const SizedBox(height: 16),
-        SensorReadingCard(
-          title: 'EMG Activity',
-          value: '85',
-          unit: 'μV',
-          status: 'Active',
-          icon: Icons.graphic_eq,
-          color: AppColors.lightSeaGreen,
-          lastReadingTime: '6:45 PM',
-          onStartMeasurement: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const EmgScreen()),
-            );
-          },
-        ),
-        SensorReadingCard(
-          title: 'Blood Oxygen Level',
-          value: '98',
-          unit: '%',
-          status: 'Normal',
-          icon: Icons.water_drop,
-          color: AppColors.skyBlue,
-          lastReadingTime: '7:23 PM',
-          onStartMeasurement: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BloodOxygenScreen(),
-              ),
-            );
-          },
-        ),
-      ],
+    return ReadingsSection(
+      emgValue: _emgValue,
+      emgTime: _emgTime,
+      oxValue: _oxValue,
+      oxTime: _oxTime,
+      isMeasuringEmg: _isMeasuringEmg,
+      isMeasuringOxy: _isMeasuringOxy,
+      onStartEmg: () => _startMeasurement('6a26e7c80115b7ebce33d2f4', 'emg'),
+      onStartOxy: () => _startMeasurement('oximeter-0001', 'oxygen'),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context, {int crossAxisCount = 2}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.1,
-          children: [
-            QuickActionCard(
-              title: 'Make\nAppointment',
-              icon: Icons.calendar_today_outlined,
-              color: const Color(0xFF9333EA),
-              bgColor: const Color(0xFFF3E8FF),
-              onTap: () => _openBooking(context),
-            ),
-            QuickActionCard(
-              title: 'Doctor Notes',
-              icon: Icons.description_outlined,
-              color: const Color(0xFF16A34A),
-              bgColor: const Color(0xFFDCFCE7),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DoctorNotesScreen(),
-                  ),
-                );
-              },
-            ),
-            QuickActionCard(
-              title: 'Health Alerts',
-              icon: Icons.notifications_outlined,
-              color: const Color(0xFFDC2626),
-              bgColor: const Color(0xFFFEE2E2),
-              onTap: onNavigateToAlerts ?? () {},
-            ),
-            QuickActionCard(
-              title: 'AI Chat',
-              icon: Icons.chat_bubble_outline,
-              color: AppColors.skyBlue,
-              bgColor: AppColors.skyBlue.withValues(alpha: 0.12),
-              onTap: () => _openAiChat(context),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  Widget _buildQuickActions(BuildContext context, {int crossAxisCount = 2}) =>
+      QuickActionsSection(onNavigateToAlerts: widget.onNavigateToAlerts);
 
-  Widget _buildRecentMeasurements(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Recent Measurements',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                'View All',
-                style: TextStyle(
-                  color: AppColors.skyBlue,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const RecentMeasurementCard(
-          title: 'Heart Rate',
-          value: '78',
-          unit: 'BPM',
-          date: 'Jan 26, 2025',
-          time: '7:23 PM',
-          indicatorColor: Color(0xFF22C55E),
-        ),
-        const RecentMeasurementCard(
-          title: 'EMG Activity',
-          value: '85',
-          unit: 'μV',
-          date: 'Jan 26, 2025',
-          time: '6:45 PM',
-          indicatorColor: AppColors.lightSeaGreen,
-        ),
-      ],
-    );
-  }
+  Widget _buildRecentMeasurements(BuildContext context) =>
+      RecentMeasurementsSection(
+        heartRateValue: _emgValue,
+        heartRateTime: _emgTime,
+        emgValue: _emgValue,
+        emgTime: _emgTime,
+      );
 
   Widget _buildMobileLayout(BuildContext context) {
     return Column(

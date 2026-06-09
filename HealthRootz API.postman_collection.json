@@ -1,11 +1,11 @@
 {
   "info": {
-    "_postman_id": "576d6999-6825-4d50-96b5-2568e1d99db7",
+    "_postman_id": "c239e901-4440-4f09-b870-8ecaf3f0613d",
     "name": "HealthRootz API",
     "description": "Complete collection of endpoints with automated variables for Bearer Token and Reset Token.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "49414524",
-    "_collection_link": "https://go.postman.co/collection/49414524-576d6999-6825-4d50-96b5-2568e1d99db7?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/49414524-c239e901-4440-4f09-b870-8ecaf3f0613d?source=collection_link"
   },
   "item": [
     {
@@ -828,7 +828,7 @@
               }
             ],
             "url": {
-              "raw": "localhost:5000/api/devices/start/:patientId",
+              "raw": "localhost:5000/api/devices/start/6a26e7c80115b7ebce33d2f4",
               "host": [
                 "localhost"
               ],
@@ -837,13 +837,7 @@
                 "api",
                 "devices",
                 "start",
-                ":patientId"
-              ],
-              "variable": [
-                {
-                  "key": "patientId",
-                  "value": "PATIENT_ID"
-                }
+                "6a26e7c80115b7ebce33d2f4"
               ]
             }
           },
@@ -861,7 +855,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patientId\": \"PATIENT_ID\",\n  \"heartRate\": 82,\n  \"temperature\": 37.1,\n  \"oxygenLevel\": 97,\n  \"bloodPressure\": \"118/78\"\n}"
+              "raw": "{\n  \"patientId\": \"6a26e7c80115b7ebce33d2f4\",\n  \"heartRate\": 82,\n  \"temperature\": 37.1,\n  \"oxygenLevel\": 97,\n  \"bloodPressure\": \"118/78\"\n}"
             },
             "url": {
               "raw": "localhost:5000/api/devices/data",
@@ -873,6 +867,27 @@
                 "api",
                 "devices",
                 "data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/devices/check",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "devices",
+                "check"
               ]
             }
           },
@@ -1401,6 +1416,22 @@
               "path": [
                 ""
               ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "New Folder",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
             }
           },
           "response": []

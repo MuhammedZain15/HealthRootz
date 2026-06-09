@@ -78,6 +78,7 @@ class SensorReadingCard extends StatelessWidget {
   final Color color; // Use Color for main theme
   final VoidCallback onStartMeasurement;
   final String lastReadingTime;
+  final bool isMeasuring;
 
   const SensorReadingCard({
     super.key,
@@ -89,6 +90,7 @@ class SensorReadingCard extends StatelessWidget {
     required this.color,
     required this.onStartMeasurement,
     required this.lastReadingTime,
+    this.isMeasuring = false,
   });
 
   @override
@@ -110,7 +112,10 @@ class SensorReadingCard extends StatelessWidget {
               spreadRadius: 2,
             ),
           ],
-          border: Border.all(color: Colors.blue.withValues(alpha: 0.1), width: 1),
+          border: Border.all(
+            color: Colors.blue.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,34 +213,58 @@ class SensorReadingCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                  label: const Text(
-                    "Start\nMeasurement",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
+                widgetButton(context, color),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget widgetButton(BuildContext context, Color color) {
+    if (isMeasuring) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Reading...',
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed: onStartMeasurement,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+      ),
+      icon: const Icon(Icons.play_arrow_rounded, size: 20),
+      label: const Text(
+        "Start\nMeasurement",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          height: 1.2,
         ),
       ),
     );
