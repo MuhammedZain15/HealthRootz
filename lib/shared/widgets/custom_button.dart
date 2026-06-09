@@ -26,6 +26,7 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final bgColor = color ?? AppColors.darkBlue;
     final bColor = borderColor ?? bgColor;
     final radius = BorderRadius.circular(15);
@@ -34,7 +35,7 @@ class CustomButton extends StatelessWidget {
       width: width ?? double.infinity,
       height: height,
       child: Material(
-        color: filled ? bgColor : Colors.white,
+        color: filled ? bgColor : theme.cardColor,
         elevation: filled ? 2 : 0,
         borderRadius: radius,
         child: InkWell(
@@ -52,7 +53,7 @@ class CustomButton extends StatelessWidget {
               text,
               style: textStyle ??
                   TextStyle(
-                    color: filled ? Colors.white : bColor,
+                    color: filled ? theme.colorScheme.onPrimary : bColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),

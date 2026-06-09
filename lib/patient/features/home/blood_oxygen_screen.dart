@@ -45,20 +45,22 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Back",
-          style: TextStyle(color: Color(0xFF1E293B), fontSize: 16),
+          style: TextStyle(color: onSurface, fontSize: 16),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+          icon: Icon(Icons.arrow_back, color: onSurface),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -69,17 +71,20 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Title
-              const Text(
+              Text(
                 "Blood Oxygen Level",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: onSurface,
                 ),
               ),
-              const Text(
+              Text(
                 "Reading Details",
-                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: onSurface.withValues(alpha: 0.6),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -91,9 +96,9 @@ class _BloodOxygenScreenState extends State<BloodOxygenScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   children: [

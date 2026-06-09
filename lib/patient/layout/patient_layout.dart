@@ -1,6 +1,7 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/l10n/app_localizations.dart';
 import 'package:grad_project/patient/features/alerts/alert_page.dart';
 import 'package:grad_project/patient/features/history/history_page.dart';
 import 'package:grad_project/patient/features/home/home_page.dart';
@@ -64,6 +65,8 @@ class _AppLayoutState extends State<_AppLayoutContent> {
   Widget _buildMobileLayout(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final double bottomBarHeight = size.height * 0.08;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _pages),
@@ -74,7 +77,7 @@ class _AppLayoutState extends State<_AppLayoutContent> {
         elevation: 0,
         child: Icon(
           Icons.chat_bubble,
-          color: Colors.white,
+          color: theme.colorScheme.onPrimary,
           size: size.width * 0.08,
         ),
       ),
@@ -82,7 +85,10 @@ class _AppLayoutState extends State<_AppLayoutContent> {
       bottomNavigationBar: AnimatedBottomNavigationBar.builder(
         itemCount: 4,
         tabBuilder: (int index, bool isActive) {
-          final color = isActive ? AppColors.skyBlue : const Color(0xff6B7280);
+          final color = isActive
+              ? theme.colorScheme.primary
+              : theme.bottomNavigationBarTheme.unselectedItemColor ??
+                    const Color(0xff6B7280);
           final double iconSize = size.width * 0.07;
           IconData icon;
           String label;
@@ -90,19 +96,19 @@ class _AppLayoutState extends State<_AppLayoutContent> {
           switch (index) {
             case 0:
               icon = isActive ? Icons.home : Icons.home_outlined;
-              label = 'Home';
+              label = l10n.home;
               break;
             case 1:
               icon = isActive ? Icons.history : Icons.history_outlined;
-              label = 'History';
+              label = l10n.history;
               break;
             case 2:
               icon = isActive ? Icons.notifications : Icons.notifications_none;
-              label = 'Alerts';
+              label = l10n.alerts;
               break;
             case 3:
               icon = isActive ? Icons.person : Icons.person_outline;
-              label = 'Profile';
+              label = l10n.profile;
               break;
             default:
               icon = Icons.error;
@@ -131,7 +137,8 @@ class _AppLayoutState extends State<_AppLayoutContent> {
         notchSmoothness: NotchSmoothness.sharpEdge,
         onTap: (index) => setState(() => _selectedIndex = index),
         height: bottomBarHeight > 60 ? bottomBarHeight : 60,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.bottomNavigationBarTheme.backgroundColor ??
+            theme.cardColor,
         elevation: 8,
       ),
     );
@@ -152,18 +159,25 @@ class _AppLayoutState extends State<_AppLayoutContent> {
   }
 
   Widget _buildNavigationRail() {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final primary = theme.colorScheme.primary;
+    final unselected =
+        theme.bottomNavigationBarTheme.unselectedItemColor ??
+        const Color(0xff6B7280);
     return NavigationRail(
       selectedIndex: _selectedIndex,
       onDestinationSelected: (index) => setState(() => _selectedIndex = index),
       labelType: NavigationRailLabelType.all,
-      backgroundColor: Colors.white,
-      selectedIconTheme: const IconThemeData(color: AppColors.skyBlue),
-      unselectedIconTheme: const IconThemeData(color: Color(0xff6B7280)),
-      selectedLabelTextStyle: const TextStyle(
-        color: AppColors.skyBlue,
+      backgroundColor:
+          theme.bottomNavigationBarTheme.backgroundColor ?? theme.cardColor,
+      selectedIconTheme: IconThemeData(color: primary),
+      unselectedIconTheme: IconThemeData(color: unselected),
+      selectedLabelTextStyle: TextStyle(
+        color: primary,
         fontWeight: FontWeight.w600,
       ),
-      unselectedLabelTextStyle: const TextStyle(color: Color(0xff6B7280)),
+      unselectedLabelTextStyle: TextStyle(color: unselected),
       leading: Column(
         children: [
           const SizedBox(height: 16),
@@ -171,31 +185,31 @@ class _AppLayoutState extends State<_AppLayoutContent> {
             onPressed: () => showActionBottomSheet(context),
             backgroundColor: AppColors.skyBlue,
             elevation: 0,
-            child: const Icon(Icons.chat_bubble, color: Colors.white),
+            child: Icon(Icons.chat_bubble, color: theme.colorScheme.onPrimary),
           ),
           const SizedBox(height: 16),
         ],
       ),
-      destinations: const [
+      destinations: [
         NavigationRailDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: Text('Home'),
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home),
+          label: Text(l10n.home),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.history_outlined),
-          selectedIcon: Icon(Icons.history),
-          label: Text('History'),
+          icon: const Icon(Icons.history_outlined),
+          selectedIcon: const Icon(Icons.history),
+          label: Text(l10n.history),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.notifications_none),
-          selectedIcon: Icon(Icons.notifications),
-          label: Text('Alerts'),
+          icon: const Icon(Icons.notifications_none),
+          selectedIcon: const Icon(Icons.notifications),
+          label: Text(l10n.alerts),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: Text('Profile'),
+          icon: const Icon(Icons.person_outline),
+          selectedIcon: const Icon(Icons.person),
+          label: Text(l10n.profile),
         ),
       ],
     );

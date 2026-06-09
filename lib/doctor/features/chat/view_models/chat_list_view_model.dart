@@ -77,6 +77,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
             (patient) => <String, dynamic>{
               'id': patient.chatUserId,
               '_id': patient.id,
+              'patientRecordId': patient.id, // API record ID for PatientDetailsPage
               'user': patient.userId,
               'name': patient.name,
               'patientName': patient.name,

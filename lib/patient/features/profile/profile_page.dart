@@ -87,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
         },
         builder: (context, profile) {
           return Scaffold(
-            backgroundColor: const Color(0xFFF4F8FF),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: SafeArea(
               child: profile.isLoading && profile.name == null
                   ? const Center(child: CircularProgressIndicator())

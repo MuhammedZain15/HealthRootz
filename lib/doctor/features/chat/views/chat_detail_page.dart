@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
+import 'package:grad_project/doctor/features/patients/patient_details_page.dart';
 import '../models/chat_model.dart';
 import '../view_models/chat_detail_view_model.dart';
 import '../widgets/chat_widgets.dart';
@@ -62,6 +65,24 @@ class _ChatDetailPageState extends State<ChatDetailPage>
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
     });
+  }
+
+  void _openPatientProfile() {
+    final recordId = widget.user.patientRecordId;
+    if (recordId.isEmpty) {
+      _showSnackBar('Patient profile not available.');
+      return;
+    }
+    final patientCubit = context.read<PatientCubit>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => BlocProvider.value(
+          value: patientCubit,
+          child: PatientDetailsPage(patientId: recordId),
+        ),
+      ),
+    );
   }
 
   Future<void> _callPatient() async {
@@ -190,30 +211,34 @@ class _ChatDetailPageState extends State<ChatDetailPage>
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1A65EB)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: const Color(0xFF1A65EB),
-              child: Text(
-                widget.user.name.substring(0, 2).toUpperCase(),
-                style: const TextStyle(color: Colors.white),
+        title: GestureDetector(
+          onTap: _openPatientProfile,
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: const Color(0xFF1A65EB),
+                child: Text(
+                  widget.user.name.substring(0, 2).toUpperCase(),
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.user.name,
-                  style: const TextStyle(color: Colors.black, fontSize: 16),
-                ),
-                const Text(
-                  'Active now',
-                  style: TextStyle(color: Colors.green, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.user.name,
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                  ),
+                  const Text(
+                    'Tap to view profile',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
