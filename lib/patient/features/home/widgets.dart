@@ -485,7 +485,8 @@ class MeasurementCountdownDialog extends StatefulWidget {
 }
 
 class _MeasurementCountdownDialogState extends State<MeasurementCountdownDialog> {
-  int _secondsRemaining = 25;
+  static const int _totalSeconds = 10;
+  int _secondsRemaining = _totalSeconds;
   Timer? _timer;
 
   @override
@@ -521,7 +522,7 @@ class _MeasurementCountdownDialogState extends State<MeasurementCountdownDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = _secondsRemaining / 25.0;
+    final progress = _secondsRemaining / _totalSeconds;
 
     return PopScope(
       canPop: false,

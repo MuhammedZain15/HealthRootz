@@ -8,6 +8,11 @@ class VitalModel {
   final String? createdAt;
   final String? updatedAt;
 
+  // AI Analysis (from the backend's `aiPrediction` object).
+  final String? prediction;
+  final double? confidence;
+  final String? riskLevel;
+
   VitalModel({
     this.id,
     this.patientId,
@@ -17,7 +22,16 @@ class VitalModel {
     this.oxygenLevel,
     this.createdAt,
     this.updatedAt,
+    this.prediction,
+    this.confidence,
+    this.riskLevel,
   });
+
+  /// True when the record carries a usable AI prediction.
+  bool get hasAiPrediction =>
+      (prediction != null && prediction!.trim().isNotEmpty) ||
+      confidence != null ||
+      (riskLevel != null && riskLevel!.trim().isNotEmpty);
 
   factory VitalModel.fromJson(Map<String, dynamic> json) {
     final data =
@@ -46,15 +60,55 @@ class VitalModel {
       return value.toString();
     }
 
+    // Reads the first present key and coerces num-or-numeric-string -> num.
+    // Avoids a hard `as num?` cast (which throws on String values) and
+    // tolerates the different field names the backend / devices use.
+    num? readNum(List<String> keys) {
+      for (final key in keys) {
+        final value = data[key];
+        if (value == null) continue;
+        if (value is num) return value;
+        if (value is String) {
+          final parsed = num.tryParse(value.trim());
+          if (parsed != null) return parsed;
+        }
+      }
+      return null;
+    }
+
+    // Parse the nested AI prediction object, if present.
+    final aiRaw = data['aiPrediction'] ?? data['ai_prediction'];
+    final ai = aiRaw is Map
+        ? Map<String, dynamic>.from(aiRaw)
+        : const <String, dynamic>{};
+    final confidenceRaw = ai['confidence'];
+    final double? confidence = confidenceRaw is num
+        ? confidenceRaw.toDouble()
+        : (confidenceRaw is String ? double.tryParse(confidenceRaw.trim()) : null);
+
     return VitalModel(
       id: (data['_id'] ?? data['id'])?.toString(),
       patientId: data['patientId']?.toString(),
-      heartRate: data['heartRate'] as num?,
-      bloodPressure: data['bloodPressure']?.toString(),
-      temperature: data['temperature'] as num?,
-      oxygenLevel: data['oxygenLevel'] as num?,
+      heartRate: readNum(['heartRate', 'heart_rate', 'bpm']),
+      bloodPressure: (data['bloodPressure'] ?? data['blood_pressure'])
+          ?.toString(),
+      temperature: readNum(['temperature', 'temp']),
+      // SpO2 / blood-oxygen saturation arrives under several names depending
+      // on the source (manual vitals vs. oximeter device).
+      oxygenLevel: readNum([
+        'oxygenLevel',
+        'oxygenSaturation',
+        'oxygen_saturation',
+        'spo2',
+        'SpO2',
+        'spO2',
+        'oxygen',
+      ]),
       createdAt: normalizeTimestamp(data['createdAt']),
       updatedAt: normalizeTimestamp(data['updatedAt']),
+      prediction: ai['prediction']?.toString(),
+      confidence: confidence,
+      riskLevel: ai['riskLevel']?.toString(),
     );
   }
 
