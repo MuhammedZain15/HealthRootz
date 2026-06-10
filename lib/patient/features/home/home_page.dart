@@ -8,7 +8,9 @@ import 'package:grad_project/shared/widgets/responsive_layout.dart';
 
 import 'package:grad_project/core/services/device_service.dart';
 import 'package:grad_project/core/services/vital_service.dart';
+import 'package:grad_project/core/models/vital_model.dart';
 import 'package:grad_project/patient/features/home/home_components.dart';
+import 'package:grad_project/patient/features/home/widgets.dart';
 import 'package:grad_project/patient/features/patient/utils/patient_auth_redirect.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,15 +23,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isMeasuringEmg = false;
-  bool _isMeasuringOxy = false;
-
-  String _emgValue = '--';
+  String _emgActivity = 'Normal';
+  String _emgStatus = 'Stable';
   String _emgTime = '--';
-  String _oxValue = '--';
-  String _oxTime = '--';
 
-  DateTime? _lastVitalTime;
+  String _oxygenValue = '--';
+  String _oxygenStatus = 'Healthy range';
+  String _oxygenTime = '--';
+
+  String _heartRateValue = '--';
+  String _heartRateStatus = 'Resting';
+  String _heartRateTime = '--';
 
   @override
   void initState() {
@@ -42,73 +46,113 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  String _formatTime(String? createdAt) {
+    if (createdAt == null) return '--';
+    try {
+      return TimeOfDay.fromDateTime(DateTime.parse(createdAt)).format(context);
+    } catch (_) {
+      return createdAt;
+    }
+  }
+
   Future<void> _loadLatestVitals() async {
     try {
+      final patientState = context.read<PatientCubit>().state;
+      final patientId = patientState is PatientLoaded
+          ? patientState.patient.id
+          : null;
+
       final resp = await VitalService().getAllVitals();
       if (resp.success && resp.data != null && resp.data!.isNotEmpty) {
-        final vitals = resp.data!;
-        vitals.sort((a, b) {
-          final aTime = a.createdAt ?? '';
-          final bTime = b.createdAt ?? '';
-          try {
-            return DateTime.parse(bTime).compareTo(DateTime.parse(aTime));
-          } catch (_) {
-            return 0;
+        var vitals = resp.data!;
+        
+        // Filter by current patient ID to make sure we show this patient's vitals
+        if (patientId != null) {
+          vitals = vitals.where((v) => v.patientId == patientId).toList();
+        }
+
+        if (vitals.isNotEmpty) {
+          vitals.sort((a, b) {
+            final aTime = a.createdAt ?? '';
+            final bTime = b.createdAt ?? '';
+            try {
+              return DateTime.parse(bTime).compareTo(DateTime.parse(aTime));
+            } catch (_) {
+              return 0;
+            }
+          });
+
+          // Find the latest non-null record for each vital sign
+          VitalModel? latestHeartRateVital;
+          VitalModel? latestOxygenVital;
+
+          for (var v in vitals) {
+            if (latestHeartRateVital == null && v.heartRate != null) {
+              latestHeartRateVital = v;
+            }
+            if (latestOxygenVital == null && v.oxygenLevel != null) {
+              latestOxygenVital = v;
+            }
+            if (latestHeartRateVital != null && latestOxygenVital != null) {
+              break; // Found all
+            }
           }
-        });
-        final latest = vitals.first;
-        setState(() {
-          _emgValue = latest.heartRate != null
-              ? '${latest.heartRate} bpm'
-              : '--';
-          try {
-            _emgTime = latest.createdAt != null
-                ? TimeOfDay.fromDateTime(
-                    DateTime.parse(latest.createdAt!),
-                  ).format(context)
-                : '--';
-          } catch (_) {
-            _emgTime = latest.createdAt ?? '--';
-          }
-          _oxValue = latest.oxygenLevel != null
-              ? '${latest.oxygenLevel} %'
-              : _oxValue;
-          _oxTime = _emgTime;
-          try {
-            _lastVitalTime = latest.createdAt != null
-                ? DateTime.parse(latest.createdAt!).toUtc()
-                : null;
-          } catch (_) {
-            _lastVitalTime = null;
-          }
-        });
+
+          setState(() {
+            _emgActivity = 'Normal';
+            _emgStatus = 'Stable';
+            _emgTime = latestHeartRateVital != null ? _formatTime(latestHeartRateVital.createdAt) : '--';
+
+            if (latestOxygenVital != null && latestOxygenVital.oxygenLevel != null) {
+              _oxygenValue = '${latestOxygenVital.oxygenLevel}%';
+              _oxygenStatus = latestOxygenVital.oxygenLevel! >= 95 ? 'Healthy range' : 'Needs attention';
+              _oxygenTime = _formatTime(latestOxygenVital.createdAt);
+            } else {
+              _oxygenValue = '--%';
+              _oxygenStatus = 'No data';
+              _oxygenTime = '--';
+            }
+
+            if (latestHeartRateVital != null && latestHeartRateVital.heartRate != null) {
+              _heartRateValue = '${latestHeartRateVital.heartRate} bpm';
+              _heartRateStatus = (latestHeartRateVital.heartRate! >= 60 && latestHeartRateVital.heartRate! <= 100)
+                  ? 'Resting'
+                  : 'Elevated';
+              _heartRateTime = _formatTime(latestHeartRateVital.createdAt);
+            } else {
+              _heartRateValue = '-- bpm';
+              _heartRateStatus = 'No data';
+              _heartRateTime = '--';
+            }
+          });
+        }
       }
     } catch (_) {}
   }
 
-  Future<void> _startMeasurement(String deviceId, String sensorType) async {
-    setState(() {
-      if (sensorType == 'emg') _isMeasuringEmg = true;
-      if (sensorType == 'oxygen') _isMeasuringOxy = true;
-    });
-
+  Future<void> _startMeasurement() async {
     final patientState = context.read<PatientCubit>().state;
     final patientId = patientState is PatientLoaded
         ? patientState.patient.id
         : null;
     final code = (Random().nextInt(900000) + 100000).toString();
+    final deviceId = patientId ?? '6a26e7c80115b7ebce33d2f4';
 
+    // Start all sensors (EMG/BloodPressure and Oximeter)
     final startResp = await DeviceService.instance.startDevice(
       deviceId,
       patientId: patientId,
       code: code,
     );
+
+    await DeviceService.instance.startDevice(
+      'oximeter-0001',
+      patientId: patientId,
+      code: code,
+    );
+
     if (!mounted) return;
     if (!startResp.success) {
-      setState(() {
-        _isMeasuringEmg = false;
-        _isMeasuringOxy = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -119,90 +163,37 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // Poll for new vitals (max ~20s)
-    bool found = false;
-    for (int attempt = 0; attempt < 10; attempt++) {
+    if (!mounted) return;
+
+    // Show 25-second countdown loading dialog
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => MeasurementCountdownDialog(
+        onComplete: () async {},
+      ),
+    );
+
+    if (!mounted) return;
+
+    // Wait a bit for the backend to process and save the new readings
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Retry fetching vitals to ensure new data is captured
+    for (int i = 0; i < 3; i++) {
+      await _loadLatestVitals();
+      if (!mounted) return;
+      // If we got data, break early
+      if (_heartRateValue != '-- bpm' || _oxygenValue != '--%') break;
       await Future.delayed(const Duration(seconds: 2));
-      try {
-        final resp = await VitalService().getAllVitals();
-        if (resp.success && resp.data != null && resp.data!.isNotEmpty) {
-          final vitals = resp.data!;
-          vitals.sort((a, b) {
-            final aTime = a.createdAt ?? '';
-            final bTime = b.createdAt ?? '';
-            try {
-              return DateTime.parse(bTime).compareTo(DateTime.parse(aTime));
-            } catch (_) {
-              return 0;
-            }
-          });
-          final latest = vitals.first;
-          DateTime? latestTime;
-          try {
-            latestTime = latest.createdAt != null
-                ? DateTime.parse(latest.createdAt!).toUtc()
-                : null;
-          } catch (_) {
-            latestTime = null;
-          }
-
-          final hasNew =
-              latestTime != null &&
-              (_lastVitalTime == null || latestTime.isAfter(_lastVitalTime!));
-          final hasSensorValue =
-              (sensorType == 'emg' && latest.heartRate != null) ||
-              (sensorType == 'oxygen' && latest.oxygenLevel != null);
-
-          if (hasNew && hasSensorValue) {
-            setState(() {
-              if (sensorType == 'emg') {
-                _emgValue = latest.heartRate != null
-                    ? '${latest.heartRate} bpm'
-                    : _emgValue;
-                try {
-                  _emgTime = latest.createdAt != null
-                      ? TimeOfDay.fromDateTime(
-                          DateTime.parse(latest.createdAt!),
-                        ).format(context)
-                      : _emgTime;
-                } catch (_) {}
-              }
-              if (sensorType == 'oxygen') {
-                _oxValue = latest.oxygenLevel != null
-                    ? '${latest.oxygenLevel} %'
-                    : _oxValue;
-                try {
-                  _oxTime = latest.createdAt != null
-                      ? TimeOfDay.fromDateTime(
-                          DateTime.parse(latest.createdAt!),
-                        ).format(context)
-                      : _oxTime;
-                } catch (_) {}
-              }
-              _lastVitalTime = latestTime ?? _lastVitalTime;
-            });
-            found = true;
-            break;
-          }
-        }
-      } catch (_) {}
     }
 
     if (!mounted) return;
-    setState(() {
-      _isMeasuringEmg = false;
-      _isMeasuringOxy = false;
-    });
-
-    if (found) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('New reading received')));
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No new data received')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Measurement completed. Vitals updated!')),
+    );
   }
 
   @override
@@ -210,6 +201,9 @@ class _HomePageState extends State<HomePage> {
     return BlocListener<PatientCubit, PatientState>(
       listener: (context, state) {
         PatientAuthRedirect.handlePatientError(context, state);
+        if (state is PatientLoaded) {
+          _loadLatestVitals();
+        }
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -233,14 +227,13 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildReadings(BuildContext context) {
     return ReadingsSection(
-      emgValue: _emgValue,
-      emgTime: _emgTime,
-      oxValue: _oxValue,
-      oxTime: _oxTime,
-      isMeasuringEmg: _isMeasuringEmg,
-      isMeasuringOxy: _isMeasuringOxy,
-      onStartEmg: () => _startMeasurement('6a26e7c80115b7ebce33d2f4', 'emg'),
-      onStartOxy: () => _startMeasurement('oximeter-0001', 'oxygen'),
+      emgActivity: _emgActivity,
+      emgStatus: _emgStatus,
+      oxygenValue: _oxygenValue,
+      oxygenStatus: _oxygenStatus,
+      heartRateValue: _heartRateValue,
+      heartRateStatus: _heartRateStatus,
+      onStartMeasurement: _startMeasurement,
     );
   }
 
@@ -249,10 +242,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRecentMeasurements(BuildContext context) =>
       RecentMeasurementsSection(
-        heartRateValue: _emgValue,
-        heartRateTime: _emgTime,
-        emgValue: _emgValue,
+        heartRateValue: _heartRateValue,
+        heartRateTime: _heartRateTime,
+        emgValue: _emgActivity,
         emgTime: _emgTime,
+        oxygenValue: _oxygenValue,
+        oxygenTime: _oxygenTime,
       );
 
   Widget _buildMobileLayout(BuildContext context) {

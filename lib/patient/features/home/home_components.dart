@@ -89,54 +89,102 @@ class SectionTitle extends StatelessWidget {
 }
 
 class ReadingsSection extends StatelessWidget {
-  final String emgValue;
-  final String emgTime;
-  final String oxValue;
-  final String oxTime;
-  final bool isMeasuringEmg;
-  final bool isMeasuringOxy;
-  final VoidCallback onStartEmg;
-  final VoidCallback onStartOxy;
+  final String emgActivity;
+  final String emgStatus;
+  final String oxygenValue;
+  final String oxygenStatus;
+  final String heartRateValue;
+  final String heartRateStatus;
+  final VoidCallback onStartMeasurement;
 
   const ReadingsSection({
     super.key,
-    required this.emgValue,
-    required this.emgTime,
-    required this.oxValue,
-    required this.oxTime,
-    required this.isMeasuringEmg,
-    required this.isMeasuringOxy,
-    required this.onStartEmg,
-    required this.onStartOxy,
+    required this.emgActivity,
+    required this.emgStatus,
+    required this.oxygenValue,
+    required this.oxygenStatus,
+    required this.heartRateValue,
+    required this.heartRateStatus,
+    required this.onStartMeasurement,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(title: 'Latest Readings', icon: Icons.show_chart),
         const SizedBox(height: 16),
-        SensorReadingCard(
-          title: 'EMG Activity',
-          value: emgValue,
-          unit: '',
-          status: 'Active',
-          icon: Icons.graphic_eq,
-          color: AppColors.lightSeaGreen,
-          lastReadingTime: emgTime,
-          isMeasuring: isMeasuringEmg,
-          onStartMeasurement: onStartEmg,
+        
+        // Start Measurement Button
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ElevatedButton.icon(
+            onPressed: onStartMeasurement,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: const Icon(Icons.play_circle_fill, color: Colors.white, size: 22),
+            label: const Text(
+              'Start Measurement',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
         ),
-        SensorReadingCard(
-          title: 'Blood Oxygen Level',
-          value: oxValue,
-          unit: '',
-          status: 'Normal',
-          icon: Icons.water_drop,
-          color: AppColors.skyBlue,
-          lastReadingTime: oxTime,
-          isMeasuring: isMeasuringOxy,
-          onStartMeasurement: onStartOxy,
+
+        // EMG Activity Card
+        PatientMetricCard(
+          title: 'EMG Activity',
+          value: emgActivity,
+          status: emgStatus,
+          icon: Icons.waves_rounded,
+          iconColor: const Color(0xFF4F46E5),
+          iconBgColor: const Color(0xFFEEF2FF),
+        ),
+
+        // SpO2 Card (Blood Oxygen Saturation)
+        PatientMetricCard(
+          title: 'SpO2',
+          value: oxygenValue,
+          status: oxygenStatus,
+          icon: Icons.air,
+          iconColor: const Color(0xFF0891B2),
+          iconBgColor: const Color(0xFFCFFAFE),
+        ),
+
+        // Heart Rate Card
+        PatientMetricCard(
+          title: 'Heart Rate',
+          value: heartRateValue,
+          status: heartRateStatus,
+          icon: Icons.favorite,
+          iconColor: const Color(0xFFEF4444),
+          iconBgColor: const Color(0xFFFEE2E2),
         ),
       ],
     );
@@ -215,6 +263,8 @@ class RecentMeasurementsSection extends StatelessWidget {
   final String heartRateTime;
   final String emgValue;
   final String emgTime;
+  final String oxygenValue;
+  final String oxygenTime;
 
   const RecentMeasurementsSection({
     super.key,
@@ -222,6 +272,8 @@ class RecentMeasurementsSection extends StatelessWidget {
     required this.heartRateTime,
     required this.emgValue,
     required this.emgTime,
+    required this.oxygenValue,
+    required this.oxygenTime,
   });
 
   @override
@@ -255,7 +307,7 @@ class RecentMeasurementsSection extends StatelessWidget {
           title: 'Heart Rate',
           value: heartRateValue,
           unit: 'BPM',
-          date: heartRateTime, // caller should pass formatted date
+          date: heartRateTime,
           time: heartRateTime,
           indicatorColor: const Color(0xFF22C55E),
         ),
@@ -266,6 +318,14 @@ class RecentMeasurementsSection extends StatelessWidget {
           date: emgTime,
           time: emgTime,
           indicatorColor: AppColors.lightSeaGreen,
+        ),
+        RecentMeasurementCard(
+          title: 'SpO2',
+          value: oxygenValue,
+          unit: '%',
+          date: oxygenTime,
+          time: oxygenTime,
+          indicatorColor: const Color(0xFF0891B2),
         ),
       ],
     );
