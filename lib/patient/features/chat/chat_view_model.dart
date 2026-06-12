@@ -11,11 +11,7 @@ import 'package:grad_project/patient/features/chat/chat_model.dart';
 import 'package:grad_project/patient/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/patient/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:grad_project/patient/features/chat/data/utils/chat_doctor_id.dart';
-import 'package:grad_project/patient/features/chat/domain/usecases/delete_message_usecase.dart';
-import 'package:grad_project/patient/features/chat/domain/usecases/get_messages_usecase.dart';
-import 'package:grad_project/patient/features/chat/domain/usecases/mark_as_read_usecase.dart';
-import 'package:grad_project/patient/features/chat/domain/usecases/resolve_doctor_id_usecase.dart';
-import 'package:grad_project/patient/features/chat/domain/usecases/send_message_usecase.dart';
+import 'package:grad_project/patient/features/chat/domain/repositories/chat_repository.dart';
 
 abstract class ChatState {
   const ChatState();
@@ -48,36 +44,11 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
   ChatCubit({
     required bool isDoctorChat,
     String? sessionId,
-    GetMessagesUseCase? getMessagesUseCase,
-    SendMessageUseCase? sendMessageUseCase,
-    MarkAsReadUseCase? markAsReadUseCase,
-    DeleteMessageUseCase? deleteMessageUseCase,
-    ResolveDoctorIdUseCase? resolveDoctorIdUseCase,
+    ChatRepository? repository,
   }) : _isDoctorChat = isDoctorChat,
        _sessionId = sessionId,
-       _getMessagesUseCase =
-           getMessagesUseCase ??
-           GetMessagesUseCase(
-             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-           ),
-       _sendMessageUseCase =
-           sendMessageUseCase ??
-           SendMessageUseCase(
-             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-           ),
-       _markAsReadUseCase =
-           markAsReadUseCase ??
-           MarkAsReadUseCase(ChatRepositoryImpl(ChatFirestoreDataSourceImpl())),
-       _deleteMessageUseCase =
-           deleteMessageUseCase ??
-           DeleteMessageUseCase(
-             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-           ),
-       _resolveDoctorIdUseCase =
-           resolveDoctorIdUseCase ??
-           ResolveDoctorIdUseCase(
-             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-           ),
+       _repository =
+           repository ?? ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
        super(const ChatInitial()) {
     _sub = stream.listen(_onStateChanged);
     if (_isDoctorChat) {
@@ -88,11 +59,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     }
   }
 
-  final GetMessagesUseCase _getMessagesUseCase;
-  final SendMessageUseCase _sendMessageUseCase;
-  final MarkAsReadUseCase _markAsReadUseCase;
-  final DeleteMessageUseCase _deleteMessageUseCase;
-  final ResolveDoctorIdUseCase _resolveDoctorIdUseCase;
+  final ChatRepository _repository;
   final AIService _aiService = AIService();
   final AiChatDataSource _aiChatDataSource = AiChatDataSourceImpl();
 
@@ -160,7 +127,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     final patientId = _patientId;
     if (doctorId == null || patientId == null) return;
 
-    final result = await _markAsReadUseCase(
+    final result = await _repository.markAsRead(
       doctorId: doctorId,
       patientId: patientId,
       messageId: messageId,
@@ -178,7 +145,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       final patientId = _patientId;
       if (doctorId == null || patientId == null) return;
 
-      final result = await _deleteMessageUseCase(
+      final result = await _repository.deleteMessage(
         doctorId: doctorId,
         patientId: patientId,
         messageId: messageId,
@@ -217,7 +184,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     }
     _patientId = patientId;
 
-    final doctorResult = await _resolveDoctorIdUseCase(patientId);
+    final doctorResult = await _repository.resolveDoctorId(patientId);
     if (isClosed) return;
     final doctorId = doctorResult.fold((failure) {
       _safeEmit(ChatError(failure.message));
@@ -228,7 +195,8 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
 
     await _messagesSub?.cancel();
     if (isClosed) return;
-    _messagesSub = _getMessagesUseCase(doctorId: doctorId, patientId: patientId)
+    _messagesSub = _repository
+        .watchMessages(doctorId: doctorId, patientId: patientId)
         .listen((result) {
           if (isClosed) return;
           result.fold((failure) => _safeEmit(ChatError(failure.message)), (
@@ -255,7 +223,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
 
     var doctorId = _doctorId;
     if (!isResolvableDoctorId(doctorId)) {
-      final doctorResult = await _resolveDoctorIdUseCase(patientId);
+      final doctorResult = await _repository.resolveDoctorId(patientId);
       if (isClosed) return;
       doctorId = doctorResult.fold((failure) {
         _safeEmit(ChatError(failure.message));
@@ -282,7 +250,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
     _emitLoaded();
 
     _safeEmit(const ChatSending());
-    final result = await _sendMessageUseCase(
+    final result = await _repository.sendMessage(
       doctorId: resolvedDoctorId,
       patientId: patientId,
       senderId: patientId,

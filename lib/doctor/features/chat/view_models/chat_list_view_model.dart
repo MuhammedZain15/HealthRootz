@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/network/token_storage.dart';
 import 'package:grad_project/doctor/features/chat/data/datasources/chat_firestore_data_source.dart';
 import 'package:grad_project/doctor/features/chat/data/repositories/chat_repository_impl.dart';
-import 'package:grad_project/doctor/features/chat/domain/usecases/watch_chat_list_usecase.dart';
+import 'package:grad_project/doctor/features/chat/domain/repositories/chat_repository.dart';
 import 'package:grad_project/doctor/features/chat/models/chat_model.dart';
 import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 
@@ -35,21 +35,18 @@ class ChatListError extends ChatListState {
 
 class ChatListCubit extends Cubit<ChatListState> implements Listenable {
   ChatListCubit({
-    WatchChatListUseCase? watchChatListUseCase,
+    ChatRepository? repository,
     Future<List<Map<String, dynamic>>> Function(String doctorId)?
     fetchDoctorPatients,
-  }) : _watchChatListUseCase =
-           watchChatListUseCase ??
-           WatchChatListUseCase(
-             ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
-           ),
+  }) : _repository =
+           repository ?? ChatRepositoryImpl(ChatFirestoreDataSourceImpl()),
        _fetchPatientsFn = fetchDoctorPatients ?? _defaultFetchDoctorPatients,
        super(const ChatListInitial()) {
     _sub = stream.listen((_) => _notifyListeners());
     unawaited(_startChatListStream());
   }
 
-  final WatchChatListUseCase _watchChatListUseCase;
+  final ChatRepository _repository;
   final Future<List<Map<String, dynamic>>> Function(String doctorId)
   _fetchPatientsFn;
   final ObserverList<VoidCallback> _listeners = ObserverList<VoidCallback>();
@@ -77,7 +74,7 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
             (patient) => <String, dynamic>{
               'id': patient.chatUserId,
               '_id': patient.id,
-              'patientRecordId': patient.id, // API record ID for PatientDetailsPage
+              'patientRecordId': patient.id,
               'user': patient.userId,
               'name': patient.name,
               'patientName': patient.name,
@@ -105,18 +102,22 @@ class ChatListCubit extends Cubit<ChatListState> implements Listenable {
     _safeEmit(const ChatListLoading());
     await _chatListSub?.cancel();
     if (isClosed) return;
-    _chatListSub = _watchChatListUseCase(
-      doctorId: doctorId,
-      fetchPatients: () => _fetchDoctorPatients(doctorId),
-    ).listen((result) {
-      if (isClosed) return;
-      result.fold((failure) => _safeEmit(ChatListError(failure.message)), (chats) {
-        if (isClosed) return;
-        _chats = chats;
-        _filtered = chats;
-        _safeEmit(ChatListLoaded(_chats, _filtered));
-      });
-    });
+    _chatListSub = _repository
+        .watchChatList(
+          doctorId: doctorId,
+          fetchPatients: () => _fetchDoctorPatients(doctorId),
+        )
+        .listen((result) {
+          if (isClosed) return;
+          result.fold((failure) => _safeEmit(ChatListError(failure.message)), (
+            chats,
+          ) {
+            if (isClosed) return;
+            _chats = chats;
+            _filtered = chats;
+            _safeEmit(ChatListLoaded(_chats, _filtered));
+          });
+        });
   }
 
   Future<void> loadChats() async {
