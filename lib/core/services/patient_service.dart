@@ -82,14 +82,14 @@ class PatientService {
 
   // ─── Delete Patient ────────────────────────────────────────────────
 
-  Future<ApiResponse<void>> deletePatient(String id) async {
+/*  Future<ApiResponse<void>> deletePatient(String id) async {
     try {
       await _dio.delete(ApiConstants.patientById(id));
       return ApiResponse(success: true);
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
-  }
+  }*/
 
   // ─── Get Current Patient Profile ───────────────────────────────────
 
@@ -123,7 +123,7 @@ class PatientService {
 
   // ─── Delete All Patients ───────────────────────────────────────────
 
-  Future<ApiResponse<void>> deleteAllPatients() async {
+  /*Future<ApiResponse<void>> deleteAllPatients() async {
     try {
       await _dio.delete(
         ApiConstants.patients,
@@ -133,7 +133,7 @@ class PatientService {
     } on DioException catch (e) {
       return ApiResponse(success: false, message: _extractError(e));
     }
-  }
+  }*/
 
   // ─── Helpers ───────────────────────────────────────────────────────
 

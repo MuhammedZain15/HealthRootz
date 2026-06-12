@@ -32,10 +32,10 @@ class CustomLabeledInput extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937), // Dark grey
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             children: [
               if (isRequired)
@@ -68,7 +68,7 @@ class CustomLabeledInput extends StatelessWidget {
                 ? Icon(prefixIcon, color: Colors.grey[400], size: 20)
                 : null,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,

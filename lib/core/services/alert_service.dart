@@ -23,33 +23,6 @@ class AlertService {
     }
   }
 
-  Future<ApiResponse<AlertModel>> createAlert({
-    required String patientId,
-    required String message,
-    required String type,
-    String? description,
-  }) async {
-    try {
-      final response = await _dio.post(
-        ApiConstants.alerts,
-        data: {
-          'patientId': patientId,
-          'message': message,
-          'type': type,
-          'description': ?description,
-        },
-      );
-      return ApiResponse(
-        success: true,
-        data: AlertModel.fromJson(
-          _unwrapMap(response.data) ?? <String, dynamic>{},
-        ),
-      );
-    } on DioException catch (e) {
-      return ApiResponse(success: false, message: _extractError(e));
-    }
-  }
-
   Future<ApiResponse<AlertModel>> updateAlert(
     String id,
     Map<String, dynamic> updates,

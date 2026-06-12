@@ -21,9 +21,9 @@ class DoctorNoteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,10 +35,10 @@ class DoctorNoteCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   note.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -56,7 +56,11 @@ class DoctorNoteCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             note.content,
-            style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.5),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -136,7 +140,7 @@ class _DoctorNotesSectionState extends State<DoctorNotesSection> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               title: const Text('Add Note'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -255,9 +259,9 @@ class _DoctorNotesSectionState extends State<DoctorNotesSection> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,9 +269,13 @@ class _DoctorNotesSectionState extends State<DoctorNotesSection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Doctor\'s Notes',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   ElevatedButton.icon(
                     onPressed: _addNote,

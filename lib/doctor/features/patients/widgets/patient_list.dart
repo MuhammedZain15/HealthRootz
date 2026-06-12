@@ -88,7 +88,7 @@ class _PatientListState extends State<PatientList> {
                             prefixIcon: const Icon(Icons.search),
                             hintText: 'Search',
                             filled: true,
-                            fillColor: Colors.grey.shade50,
+                            fillColor: Theme.of(context).colorScheme.surface,
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 12,
                             ),
@@ -102,7 +102,7 @@ class _PatientListState extends State<PatientList> {
                       const SizedBox(width: 12),
                       DropdownButton<String>(
                         borderRadius: BorderRadius.circular(12),
-                        dropdownColor: Colors.white,
+                        dropdownColor: Theme.of(context).cardColor,
                         value: state.statusFilter,
                         items: const [
                           DropdownMenuItem(

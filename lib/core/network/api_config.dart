@@ -8,10 +8,10 @@ class ApiConfig {
   ApiConfig._();
 
   /// Your machine's LAN IP (update when your network changes).
-  static const String host = '192.168.137.42';
+  static const String host = '192.168.1.4';
 
   /// Backend port (must match your server, e.g. 5000 or 8000).
-  static const int port = 8000;
+  static const int port = 5000;
 
   /// API path prefix on the server.
   static const String apiPath = '/api';

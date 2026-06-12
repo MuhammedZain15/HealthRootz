@@ -27,7 +27,7 @@ class AlertCard extends StatelessWidget {
       case AlertSeverity.warning:
         return const Color(0xFFFFFBE6); // Light Yellow
       case AlertSeverity.resolved:
-        return Colors.white;
+        return const Color(0xFFF0F5FF);
     }
   }
 
@@ -38,7 +38,7 @@ class AlertCard extends StatelessWidget {
       case AlertSeverity.warning:
         return const Color(0xFFFFE58F);
       case AlertSeverity.resolved:
-        return Colors.grey.shade300;
+        return const Color(0xFFD6E4FF);
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/core/models/vital_model.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/doctor/features/patients/cubit/doctor_patient_detail_cubit.dart';
 import 'package:grad_project/doctor/features/patients/models/doctor_patient_detail_model.dart';
@@ -102,6 +103,8 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
 
           return _PatientDetailsBody(
             patient: patient,
+            vitals: state.vitals,
+            vitalsLoading: state.vitalsLoading,
             isRefreshing: state.isLoading,
             errorMessage: state.errorMessage,
             onRetry: _cubit.retry,
@@ -114,29 +117,52 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
 
 class _PatientDetailsBody extends StatelessWidget {
   final Patient patient;
+  final List<VitalModel> vitals;
+  final bool vitalsLoading;
   final bool isRefreshing;
   final String? errorMessage;
   final VoidCallback onRetry;
 
   const _PatientDetailsBody({
     required this.patient,
+    required this.vitals,
+    required this.vitalsLoading,
     required this.isRefreshing,
     this.errorMessage,
     required this.onRetry,
   });
 
+  /// Systolic value parsed from a "120/80" blood-pressure string.
+  double? _systolic(String? bp) {
+    if (bp == null) return null;
+    final first = bp.split('/').first.trim();
+    return double.tryParse(first);
+  }
+
+  /// Heart-rate series in chronological order (oldest -> newest).
+  List<double> get _heartRateSeries => vitals.reversed
+      .map((v) => v.heartRate?.toDouble())
+      .whereType<double>()
+      .toList();
+
+  /// Systolic blood-pressure series in chronological order.
+  List<double> get _bloodPressureSeries => vitals.reversed
+      .map((v) => _systolic(v.bloodPressure))
+      .whereType<double>()
+      .toList();
+
   @override
   Widget build(BuildContext context) {
-    final heartRateData = List<double>.filled(24, patient.heartRate.toDouble());
-    final bloodPressureData = List<double>.filled(24, 115.0);
+    final heartRateData = _heartRateSeries;
+    final bloodPressureData = _bloodPressureSeries;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             Container(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
@@ -240,6 +266,58 @@ class _PatientDetailsBody extends StatelessWidget {
     );
   }
 
+  VitalModel? get _latestVital => vitals.isNotEmpty ? vitals.first : null;
+
+  /// Vital signs + (when present) the AI analysis for the latest reading.
+  List<Widget> _vitalsAndAiSection() {
+    final latest = _latestVital;
+    return [
+      CurrentVitalSignsSection(latest: latest, isLoading: vitalsLoading),
+      if (latest != null && latest.hasAiPrediction) ...[
+        const SizedBox(height: 20),
+        AiAnalysisCard(vital: latest),
+      ],
+    ];
+  }
+
+  /// EMG card — only when the latest reading actually carries an EMG value.
+  List<Widget> _emgSection() {
+    final emg = _latestVital?.emg;
+    if (emg == null) return const [];
+    return [
+      const SizedBox(height: 20),
+      Builder(
+        builder: (context) => Text(
+          'EMG Sensor Reading',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      EmgReadingCard(value: emg),
+    ];
+  }
+
+  /// History chart — only when there are at least two data points to plot.
+  List<Widget> _chartSection(
+    List<double> heartRateData,
+    List<double> bloodPressureData,
+  ) {
+    if (heartRateData.length < 2 && bloodPressureData.length < 2) {
+      return const [];
+    }
+    return [
+      const SizedBox(height: 20),
+      VitalSignsChart(
+        heartRateData: heartRateData,
+        bloodPressureData: bloodPressureData,
+      ),
+    ];
+  }
+
   Widget _buildTabletDesktopLayout(
     BuildContext context,
     Patient patient,
@@ -261,23 +339,9 @@ class _PatientDetailsBody extends StatelessWidget {
                   children: [
                     PatientHeader(patient: patient),
                     const SizedBox(height: 20),
-                    CurrentVitalSignsSection(),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'EMG Sensor Reading',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    EmgReadingCard(value: patient.emgReading),
-                    const SizedBox(height: 20),
-                    VitalSignsChart(
-                      heartRateData: heartRateData,
-                      bloodPressureData: bloodPressureData,
-                    ),
+                    ..._vitalsAndAiSection(),
+                    ..._emgSection(),
+                    ..._chartSection(heartRateData, bloodPressureData),
                   ],
                 ),
               ),
@@ -288,8 +352,6 @@ class _PatientDetailsBody extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     PatientInformationSection(patient: patient),
-                    const SizedBox(height: 20),
-                    const RecentActivitySection(),
                     const SizedBox(height: 20),
                     DoctorNotesSection(patientId: patient.id),
                     const SizedBox(height: 20),
@@ -313,27 +375,11 @@ class _PatientDetailsBody extends StatelessWidget {
     return [
       PatientHeader(patient: patient),
       const SizedBox(height: 20),
-      CurrentVitalSignsSection(),
-      const SizedBox(height: 20),
-      const Text(
-        'EMG Sensor Reading',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-      ),
-      const SizedBox(height: 12),
-      EmgReadingCard(value: patient.emgReading),
-      const SizedBox(height: 20),
-      VitalSignsChart(
-        heartRateData: heartRateData,
-        bloodPressureData: bloodPressureData,
-      ),
+      ..._vitalsAndAiSection(),
+      ..._emgSection(),
+      ..._chartSection(heartRateData, bloodPressureData),
       const SizedBox(height: 20),
       PatientInformationSection(patient: patient),
-      const SizedBox(height: 20),
-      const RecentActivitySection(),
       const SizedBox(height: 20),
       DoctorNotesSection(patientId: patient.id),
       const SizedBox(height: 20),

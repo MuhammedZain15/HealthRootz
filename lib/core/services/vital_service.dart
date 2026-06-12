@@ -38,6 +38,26 @@ class VitalService {
     }
   }
 
+  /// Doctor-side: fetch a single patient's vitals via
+  /// `GET /vitals?patientId=<id>` (newest first).
+  Future<ApiResponse<List<VitalModel>>> getVitalsForPatient(
+    String patientId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.vitals,
+        queryParameters: {'patientId': patientId},
+      );
+      final vitals = _unwrapList(response.data)
+          .whereType<Map>()
+          .map((e) => VitalModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+      return ApiResponse(success: true, data: vitals);
+    } on DioException catch (e) {
+      return ApiResponse(success: false, message: _extractError(e));
+    }
+  }
+
   Future<ApiResponse<VitalModel>> createVital(VitalModel vital) async {
     try {
       final response = await _dio.post(

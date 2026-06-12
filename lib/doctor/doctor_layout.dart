@@ -12,10 +12,8 @@ import 'package:grad_project/patient/features/patient/data/repositories/patient_
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'features/home/doctor_home_page.dart';
 import 'features/profile/doctor_profile_page.dart';
-
 class DoctorAppLayout extends StatelessWidget {
   const DoctorAppLayout({super.key});
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider<PatientCubit>(
@@ -26,14 +24,12 @@ class DoctorAppLayout extends StatelessWidget {
     );
   }
 }
-
 class _DoctorAppLayoutContent extends StatefulWidget {
   const _DoctorAppLayoutContent();
 
   @override
   State<_DoctorAppLayoutContent> createState() => _AppLayoutState();
 }
-
 class _AppLayoutState extends State<_DoctorAppLayoutContent> {
   int _selectedIndex = 0;
 
@@ -41,7 +37,6 @@ class _AppLayoutState extends State<_DoctorAppLayoutContent> {
     if (_selectedIndex == index) return;
     setState(() => _selectedIndex = index);
   }
-
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthCubit>().state;
@@ -59,15 +54,13 @@ class _AppLayoutState extends State<_DoctorAppLayoutContent> {
       const DoctorChatPage(),
       const DoctorProfilePage(),
     ];
-
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         selectedItemColor: AppColors.skyBlue,
         unselectedItemColor: const Color(0xff6B7280),
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),

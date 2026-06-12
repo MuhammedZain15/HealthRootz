@@ -15,9 +15,9 @@ class RecentAlerts extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -62,6 +62,7 @@ class RecentAlerts extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
               child: _buildAlertItem(
+                context: context,
                 name: alert.patientName ?? "Unknown Patient",
                 message: alert.message ?? "No message",
                 time: timeString,
@@ -76,6 +77,7 @@ class RecentAlerts extends StatelessWidget {
   }
 
   Widget _buildAlertItem({
+    required BuildContext context,
     required String name,
     required String message,
     required String time,
@@ -85,7 +87,7 @@ class RecentAlerts extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

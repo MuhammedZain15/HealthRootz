@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:grad_project/doctor/features/profile/widgets/profile_header.dart';
 import 'package:grad_project/doctor/features/profile/widgets/profile_info_card.dart';
 import 'package:grad_project/doctor/features/profile/widgets/change_password_card.dart';
-import 'package:grad_project/doctor/features/profile/widgets/notification_settings_card.dart';
+import 'package:grad_project/doctor/features/profile/widgets/preferences_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'package:grad_project/patient/features/auth/sign_in/sign_in_page.dart';
@@ -52,7 +52,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     return BlocProvider<DoctorProfileCubit>.value(
       value: _profileCubit,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocBuilder<DoctorProfileCubit, DoctorProfileModel>(
             builder: (context, profile) {
@@ -78,7 +78,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                       style: TextStyle(
                         fontSize: screenWidth * 0.06,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF111827),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -165,8 +165,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                     const SizedBox(height: 24),
                     const ChangePasswordCard(),
                     const SizedBox(height: 24),
-                    const SizedBox(height: 24),
-                    const NotificationSettingsCard(),
+                    const PreferencesCard(),
                     const SizedBox(height: 32),
 
                     // Logout Button

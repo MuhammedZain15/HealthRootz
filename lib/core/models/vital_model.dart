@@ -5,6 +5,7 @@ class VitalModel {
   final String? bloodPressure;
   final num? temperature;
   final num? oxygenLevel;
+  final num? emg;
   final String? createdAt;
   final String? updatedAt;
 
@@ -20,6 +21,7 @@ class VitalModel {
     this.bloodPressure,
     this.temperature,
     this.oxygenLevel,
+    this.emg,
     this.createdAt,
     this.updatedAt,
     this.prediction,
@@ -104,6 +106,7 @@ class VitalModel {
         'spO2',
         'oxygen',
       ]),
+      emg: readNum(['emg', 'emgReading', 'muscleActivity']),
       createdAt: normalizeTimestamp(data['createdAt']),
       updatedAt: normalizeTimestamp(data['updatedAt']),
       prediction: ai['prediction']?.toString(),
