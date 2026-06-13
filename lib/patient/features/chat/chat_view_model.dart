@@ -384,7 +384,7 @@ class ChatCubit extends Cubit<ChatState> implements Listenable {
       _messages.add(
         ChatMessage(
           text:
-              "صباحك كلو رزق يا مريض يا عاجز انا الذكاء الاصطبحي لو محتاجني ف حاجه متكلمنيش ",
+              "How can i help you today? You can ask me anything about your health",
           isSender: false,
           timestamp: DateTime.now(),
           doctorName: "AI Assistant",
