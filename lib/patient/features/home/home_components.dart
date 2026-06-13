@@ -7,6 +7,8 @@ import 'package:grad_project/patient/features/home/widgets.dart';
 import 'package:grad_project/patient/features/ai_chat/ai_sessions_screen.dart';
 import 'package:grad_project/core/cubit/auth_cubit.dart';
 import 'appointment/select_date_time_screen.dart';
+import 'appointment/cubit/patient_booking_cubit.dart';
+import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 import 'package:grad_project/patient/features/home/doctor_notes/doctor_notes_screen.dart';
 
 typedef VoidCallbackString = void Function();
@@ -222,18 +224,44 @@ class QuickActionsSection extends StatelessWidget {
               icon: Icons.calendar_today_outlined,
               color: const Color(0xFF9333EA),
               bgColor: const Color(0xFFF3E8FF),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SelectDateTimeScreen()),
-              ),
+              onTap: () {
+                final patientCubit = context.read<PatientCubit>();
+                final appointmentsCubit =
+                    context.read<PatientAppointmentsCubit>();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MultiBlocProvider(
+                      providers: [
+                        BlocProvider<PatientBookingCubit>(
+                          create: (_) =>
+                              PatientBookingCubit(patientCubit)
+                                ..initializeBooking(),
+                        ),
+                        BlocProvider.value(value: patientCubit),
+                        BlocProvider.value(value: appointmentsCubit),
+                      ],
+                      child: const SelectDateTimeScreen(),
+                    ),
+                  ),
+                );
+              },
             ),
             QuickActionCard(
               title: 'Doctor Notes',
               icon: Icons.description_outlined,
               color: const Color(0xFF16A34A),
               bgColor: const Color(0xFFDCFCE7),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DoctorNotesScreen()),
-              ),
+              onTap: () {
+                final patientCubit = context.read<PatientCubit>();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: patientCubit,
+                      child: const DoctorNotesScreen(),
+                    ),
+                  ),
+                );
+              },
             ),
             QuickActionCard(
               title: 'Health Alerts',
@@ -267,7 +295,7 @@ class RecentMeasurementsSection extends StatelessWidget {
   final String oxygenTime;
 
   const RecentMeasurementsSection({
-    super.key,
+    super.key,  
     required this.heartRateValue,
     required this.heartRateTime,
     required this.emgValue,

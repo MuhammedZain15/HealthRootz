@@ -84,9 +84,14 @@ class VitalModel {
         ? Map<String, dynamic>.from(aiRaw)
         : const <String, dynamic>{};
     final confidenceRaw = ai['confidence'];
-    final double? confidence = confidenceRaw is num
+    double? confidence = confidenceRaw is num
         ? confidenceRaw.toDouble()
         : (confidenceRaw is String ? double.tryParse(confidenceRaw.trim()) : null);
+    // The backend stores confidence as a percentage (0–100, e.g. 63, 78) but the
+    // UI expects a 0–1 fraction. Normalize so a value > 1 is treated as a percent.
+    if (confidence != null && confidence > 1) {
+      confidence = confidence / 100.0;
+    }
 
     return VitalModel(
       id: (data['_id'] ?? data['id'])?.toString(),
