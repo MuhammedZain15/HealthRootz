@@ -107,3 +107,6 @@ class AIService {
     return keywords.any((keyword) => normalized.contains(keyword));
   }
 }
+
+// commit update
+ 

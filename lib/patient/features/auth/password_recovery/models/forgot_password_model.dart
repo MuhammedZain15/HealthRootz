@@ -38,3 +38,6 @@ class ForgotPasswordModel {
   bool get canNavigateToReset =>
       resetToken != null && resetToken!.isNotEmpty;
 }
+
+// commit update
+ 

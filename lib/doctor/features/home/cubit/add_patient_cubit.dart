@@ -1,15 +1,11 @@
-import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/patient/features/patient/data/models/patient_model.dart' as new_api;
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_state.dart';
 import '../models/add_patient_model.dart';
-import '../view_models/add_patient_view_model.dart';
 
 class AddPatientCubit extends Cubit<AddPatientModel> {
-  final AddPatientViewModel _viewModel = AddPatientViewModel();
   final PatientCubit _patientCubit;
-  StreamSubscription? _patientSubscription;
 
   AddPatientCubit(this._patientCubit) : super(AddPatientModel.initial());
 
@@ -39,7 +35,7 @@ class AddPatientCubit extends Cubit<AddPatientModel> {
   }
 
   Future<(bool success, new_api.PatientModel? patient)> submit() async {
-    final validation = _viewModel.validate(state);
+    final validation = _validate(state);
     if (validation != null) {
       emit(state.copyWith(errorMessage: validation));
       return (false, null);
@@ -47,28 +43,60 @@ class AddPatientCubit extends Cubit<AddPatientModel> {
 
     emit(state.copyWith(isLoading: true, clearError: true));
 
-    final map = _viewModel.toMap(state);
-    final completer = Completer<(bool, new_api.PatientModel?)>();
-
-    _patientSubscription?.cancel();
-    _patientSubscription = _patientCubit.stream.listen((patientState) {
-      if (patientState is PatientLoaded) {
-        emit(state.copyWith(isLoading: false, clearError: true));
-        completer.complete((true, patientState.patient));
-      } else if (patientState is PatientError) {
-        emit(state.copyWith(isLoading: false, errorMessage: patientState.message));
-        completer.complete((false, null));
-      }
-    });
+    final map = _toPatientMap(state);
+    final result = _patientCubit.stream.firstWhere(
+      (patientState) =>
+          patientState is PatientLoaded || patientState is PatientError,
+    );
 
     await _patientCubit.createPatient(map);
+    final patientState = await result;
 
-    return completer.future;
+    if (patientState is PatientLoaded) {
+      emit(state.copyWith(isLoading: false, clearError: true));
+      return (true, patientState.patient);
+    }
+    final message = (patientState as PatientError).message;
+    emit(state.copyWith(isLoading: false, errorMessage: message));
+    return (false, null);
   }
 
-  @override
-  Future<void> close() {
-    _patientSubscription?.cancel();
-    return super.close();
+  String? _validate(AddPatientModel form) {
+    if (form.name.trim().isEmpty) return 'Enter patient full name';
+    if (form.name.trim().length < 2) return 'Name is too short';
+
+    final email = form.email.trim();
+    if (email.isEmpty) return 'Enter email address';
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      return 'Enter a valid email';
+    }
+
+    final age = int.tryParse(form.age.trim());
+    if (age == null || age <= 0 || age > 150) return 'Enter a valid age';
+
+    if (form.phone.trim().isEmpty) return 'Enter phone number';
+    if (form.gender.trim().isEmpty) return 'Select gender';
+    if (form.condition.trim().isEmpty) return 'Enter medical condition';
+    if (form.status.trim().isEmpty) return 'Select status';
+
+    return null;
+  }
+
+  Map<String, dynamic> _toPatientMap(AddPatientModel form) {
+    return {
+      'name': form.name.trim(),
+      'email': form.email.trim(),
+      'age': int.parse(form.age.trim()),
+      'phone': form.phone.trim(),
+      'gender': form.gender,
+      'medicalHistory': form.medicalHistory.trim().isEmpty
+          ? 'No significant prior history.'
+          : form.medicalHistory.trim(),
+      'condition': form.condition.trim(),
+      'status': form.status,
+    };
   }
 }
+
+// commit update
+ 

@@ -30,10 +30,12 @@ class AppointmentFilters extends StatelessWidget {
                   onSelected(index);
                 }
               },
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               selectedColor: const Color(0xFF2563EB),
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 fontSize: 14,
               ),
@@ -53,3 +55,6 @@ class AppointmentFilters extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

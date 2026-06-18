@@ -2,3 +2,6 @@
 enum AlertSeverity { critical, warning, resolved }
 
 enum AlertType { heartRate, bloodPressure, temperature, other }
+
+// commit update
+ 

@@ -12,6 +12,7 @@ import 'package:grad_project/l10n/app_localizations.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_state.dart';
 import 'package:grad_project/patient/features/history/history_page.dart';
+import 'package:grad_project/patient/features/history/cubit/patient_vitals_cubit.dart';
 import 'package:grad_project/patient/features/profile/models/patient_profile_model.dart';
 import 'package:grad_project/patient/features/profile/widgets/profile_logout_button.dart';
 import 'package:grad_project/patient/features/history/data/measurement_model.dart';
@@ -445,8 +446,15 @@ class _PatientProfileBodyState extends State<PatientProfileBody> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => PatientAppointmentsCubit()..loadAppointments(),
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => PatientAppointmentsCubit()..loadAppointments(),
+            ),
+            // HistoryPage reads a PatientVitalsCubit from context; provide one
+            // for this pushed route (outside AppLayout's provider scope).
+            BlocProvider(create: (_) => PatientVitalsCubit()..loadVitals()),
+          ],
           child: const HistoryPage(),
         ),
       ),
@@ -1213,3 +1221,6 @@ class _CircleAction extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

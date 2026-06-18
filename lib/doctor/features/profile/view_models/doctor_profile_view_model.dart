@@ -191,3 +191,6 @@ class DoctorProfileViewModel {
     return profile.copyWith(errorMessage: message, successMessage: null);
   }
 }
+
+// commit update
+ 

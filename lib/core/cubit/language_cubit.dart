@@ -33,3 +33,6 @@ class LanguageCubit extends Cubit<Locale> {
 
   bool get isArabic => state.languageCode == 'ar';
 }
+
+// commit update
+ 

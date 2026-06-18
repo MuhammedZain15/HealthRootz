@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-// removed unused import
+import 'package:flutter/foundation.dart';
 
 import '../models/vital_model.dart';
 import '../network/api_client.dart';
@@ -13,8 +13,42 @@ class VitalService {
   Future<ApiResponse<List<VitalModel>>> getAllVitals() async {
     try {
       final response = await _dio.get(ApiConstants.vitals);
+      debugPrint(
+        '[VitalService] GET ${ApiConstants.vitals} -> ${response.statusCode}',
+      );
+      debugPrint('[VitalService] raw body: ${response.data}');
       final list = _unwrapList(response.data);
+      debugPrint('[VitalService] unwrapped list length=${list.length}');
       final vitals = list
+          .whereType<Map>()
+          .map((e) => VitalModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+      if (vitals.isNotEmpty) {
+        final f = vitals.first;
+        debugPrint(
+          '[VitalService] parsed[0]: hr=${f.heartRate} spo2=${f.oxygenLevel} '
+          'temp=${f.temperature} bp=${f.bloodPressure} pid=${f.patientId} '
+          'createdAt=${f.createdAt}',
+        );
+      }
+      return ApiResponse(success: true, data: vitals);
+    } on DioException catch (e) {
+      debugPrint('[VitalService] ERROR: ${_extractError(e)}');
+      return ApiResponse(success: false, message: _extractError(e));
+    }
+  }
+
+  /// Doctor-side: fetch a single patient's vitals via
+  /// `GET /vitals?patientId=<id>` (newest first).
+  Future<ApiResponse<List<VitalModel>>> getVitalsForPatient(
+    String patientId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        ApiConstants.vitals,
+        queryParameters: {'patientId': patientId},
+      );
+      final vitals = _unwrapList(response.data)
           .whereType<Map>()
           .map((e) => VitalModel.fromJson(Map<String, dynamic>.from(e)))
           .toList();
@@ -76,3 +110,6 @@ class VitalService {
     return e.message ?? 'Network error';
   }
 }
+
+// commit update
+ 

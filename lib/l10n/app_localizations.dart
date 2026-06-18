@@ -117,6 +117,19 @@ class AppLocalizations {
     'done': 'Done',
     'yes': 'Yes',
     'no': 'No',
+    // AI Analysis / Vital detail
+    'ai_analysis': 'AI Analysis',
+    'risk_level': 'Risk Level',
+    'ai_confidence': 'AI Confidence',
+    'heart_rate': 'Heart Rate',
+    'spo2': 'SpO2',
+    'temperature': 'Temperature',
+    'emg': 'EMG',
+    'blood_pressure': 'Blood Pressure',
+    'risk_low': 'LOW',
+    'risk_medium': 'MEDIUM',
+    'risk_high': 'HIGH',
+    'vitals_check': 'Vitals Check',
   };
 
   static const _ar = <String, String>{
@@ -206,6 +219,19 @@ class AppLocalizations {
     'done': 'تم',
     'yes': 'نعم',
     'no': 'لا',
+    // AI Analysis / Vital detail
+    'ai_analysis': 'تحليل الذكاء الاصطناعي',
+    'risk_level': 'مستوى الخطورة',
+    'ai_confidence': 'ثقة الذكاء الاصطناعي',
+    'heart_rate': 'معدل ضربات القلب',
+    'spo2': 'الأكسجين في الدم',
+    'temperature': 'درجة الحرارة',
+    'emg': 'نشاط العضلات',
+    'blood_pressure': 'ضغط الدم',
+    'risk_low': 'منخفض',
+    'risk_medium': 'متوسط',
+    'risk_high': 'مرتفع',
+    'vitals_check': 'فحص العلامات الحيوية',
   };
 
   String translate(String key) {
@@ -281,6 +307,19 @@ class AppLocalizations {
   String get done => translate('done');
   String get yes => translate('yes');
   String get no => translate('no');
+  // AI Analysis / Vital detail
+  String get aiAnalysis => translate('ai_analysis');
+  String get riskLevel => translate('risk_level');
+  String get aiConfidence => translate('ai_confidence');
+  String get heartRate => translate('heart_rate');
+  String get spo2 => translate('spo2');
+  String get temperature => translate('temperature');
+  String get emg => translate('emg');
+  String get bloodPressure => translate('blood_pressure');
+  String get riskLow => translate('risk_low');
+  String get riskMedium => translate('risk_medium');
+  String get riskHigh => translate('risk_high');
+  String get vitalsCheck => translate('vitals_check');
 }
 
 class _AppLocalizationsDelegate
@@ -299,3 +338,6 @@ class _AppLocalizationsDelegate
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
+
+// commit update
+ 

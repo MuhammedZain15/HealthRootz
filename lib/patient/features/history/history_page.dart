@@ -12,6 +12,7 @@ import 'package:grad_project/app_colors.dart';
 import 'package:grad_project/core/models/report_model.dart';
 import 'package:grad_project/core/services/report_service.dart';
 import './presentation/pages/report_detail_page.dart';
+import './presentation/pages/vital_detail_page.dart';
 import './presentation/widgets/history_summary_cards.dart';
 import './presentation/widgets/history_list_item.dart';
 import './presentation/widgets/appointment_history_list_item.dart';
@@ -67,14 +68,11 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void initState() {
     super.initState();
-    _vitalsCubit = PatientVitalsCubit()..loadVitals();
+    // Shared instance provided in AppLayout — Home triggers reloads on it, so
+    // new measurements show here in real time. Do NOT close it here (the
+    // provider owns its lifecycle).
+    _vitalsCubit = context.read<PatientVitalsCubit>();
     context.read<PatientAppointmentsCubit>().loadAppointments();
-  }
-
-  @override
-  void dispose() {
-    _vitalsCubit.close();
-    super.dispose();
   }
 
   @override
@@ -272,7 +270,12 @@ class _HistoryPageState extends State<HistoryPage> {
               padding: const EdgeInsets.only(bottom: 16),
               child: HistoryListItem(
                 vital: v,
-                onTap: () {}, // Detail page removed for snapshot view
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VitalDetailPage(vital: v),
+                  ),
+                ),
               ),
             ),
           ),
@@ -293,7 +296,10 @@ class _HistoryPageState extends State<HistoryPage> {
         final vital = vitals[index];
         return HistoryListItem(
           vital: vital,
-          onTap: () {}, // Detail page removed for snapshot view
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => VitalDetailPage(vital: vital)),
+          ),
         );
       },
     );
@@ -314,7 +320,10 @@ class _HistoryPageState extends State<HistoryPage> {
         final vital = vitals[index];
         return HistoryListItem(
           vital: vital,
-          onTap: () {},
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => VitalDetailPage(vital: vital)),
+          ),
         );
       },
     );
@@ -648,3 +657,6 @@ class _ReportsErrorView extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

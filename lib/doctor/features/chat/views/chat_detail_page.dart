@@ -203,9 +203,9 @@ class _ChatDetailPageState extends State<ChatDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1A65EB)),
@@ -229,7 +229,10 @@ class _ChatDetailPageState extends State<ChatDetailPage>
                 children: [
                   Text(
                     widget.user.name,
-                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
                   ),
                   const Text(
                     'Tap to view profile',
@@ -282,3 +285,6 @@ class _ChatDetailPageState extends State<ChatDetailPage>
     );
   }
 }
+
+// commit update
+ 

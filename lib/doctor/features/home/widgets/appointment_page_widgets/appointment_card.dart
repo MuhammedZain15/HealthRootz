@@ -89,9 +89,9 @@ class _AppointmentCardState extends State<AppointmentCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -137,10 +137,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
                             Expanded(
                               child: Text(
                                 a.patientName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF111827),
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -239,18 +239,18 @@ class _AppointmentCardState extends State<AppointmentCard> {
             ),
           ),
           if (_isExpanded) ...[
-            Divider(height: 1, color: Colors.grey[200]),
+            Divider(height: 1, color: Theme.of(context).dividerColor),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Reason',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -332,3 +332,6 @@ class _AppointmentCardState extends State<AppointmentCard> {
     );
   }
 }
+
+// commit update
+ 

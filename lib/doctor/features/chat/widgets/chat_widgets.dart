@@ -11,9 +11,9 @@ class ChatSearchField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: const TextField(
         decoration: InputDecoration(
@@ -68,7 +68,9 @@ class ChatListTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: user.unreadCount > 0 ? Colors.black87 : Colors.grey,
+                color: user.unreadCount > 0
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Colors.grey,
                 fontWeight: user.unreadCount > 0
                     ? FontWeight.w600
                     : FontWeight.normal,
@@ -233,14 +235,15 @@ class MessageBubble extends StatelessWidget {
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFF1A65EB) : Colors.white,
+            color: isMe ? const Color(0xFF1A65EB) : Theme.of(context).cardColor,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(12),
               topRight: const Radius.circular(12),
               bottomLeft: isMe ? const Radius.circular(12) : Radius.zero,
               bottomRight: isMe ? Radius.zero : const Radius.circular(12),
             ),
-            border: isMe ? null : Border.all(color: Colors.grey.shade300),
+            border:
+                isMe ? null : Border.all(color: Theme.of(context).dividerColor),
             boxShadow: [
               if (!isMe)
                 BoxShadow(
@@ -314,7 +317,9 @@ class MessageBubble extends StatelessWidget {
               Text(
                 message.text,
                 style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black87,
+                  color: isMe
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
                   fontSize: 15,
                 ),
               ),
@@ -366,7 +371,7 @@ class ChatInputArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Row(
         children: [
           IconButton(
@@ -379,7 +384,7 @@ class ChatInputArea extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: Theme.of(context).dividerColor),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
@@ -409,3 +414,6 @@ class ChatInputArea extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

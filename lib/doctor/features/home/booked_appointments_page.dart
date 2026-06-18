@@ -55,20 +55,21 @@ class _BookedAppointmentsPageState extends State<BookedAppointmentsPage> {
           final filters = state.buildFilterLabels();
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF9FAFB),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
-              title: const Text(
+              title: Text(
                 'Appointments',
                 style: TextStyle(
-                  color: Color(0xFF111827),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
               ),
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF111827)),
+                icon: Icon(Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -77,7 +78,7 @@ class _BookedAppointmentsPageState extends State<BookedAppointmentsPage> {
               children: [
                 Container(
                   width: double.infinity,
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,3 +172,6 @@ class _BookedAppointmentsPageState extends State<BookedAppointmentsPage> {
     );
   }
 }
+
+// commit update
+ 

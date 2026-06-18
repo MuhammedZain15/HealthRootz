@@ -142,42 +142,7 @@ class DoctorAlertsViewModel {
       );
     }
   }
-
-  Future<(DoctorAlertsListModel, String?)> deleteAlert(
-    DoctorAlertsListModel current,
-    String id,
-  ) async {
-    try {
-      final result = await _alertService.deleteAlert(id);
-
-      if (result.success) {
-        final updated = current.alerts.where((a) => a.id != id).toList();
-        return (
-          current.copyWith(
-            alerts: updated,
-            isUpdating: false,
-            successMessage: 'Alert deleted',
-            clearError: true,
-          ),
-          null,
-        );
-      }
-
-      return (
-        current.copyWith(
-          isUpdating: false,
-          errorMessage: result.message ?? 'Failed to delete alert',
-        ),
-        result.message,
-      );
-    } catch (e) {
-      return (
-        current.copyWith(
-          isUpdating: false,
-          errorMessage: 'Error: ${e.toString()}',
-        ),
-        e.toString(),
-      );
-    }
-  }
 }
+
+// commit update
+ 

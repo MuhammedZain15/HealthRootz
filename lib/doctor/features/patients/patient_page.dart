@@ -12,9 +12,12 @@ class PatientPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => DoctorPatientsCubit(context.read<PatientCubit>())..loadPatients(),
       child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(child: const PatientList()),
       ),
     );
   }
 }
+
+// commit update
+ 

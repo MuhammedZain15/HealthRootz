@@ -14,9 +14,9 @@ class QuickActions extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,6 +27,7 @@ class QuickActions extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildActionButton(
+            context: context,
             label: "Add New Patient",
             onPressed: () {
               final patientCubit = context.read<PatientCubit>();
@@ -44,6 +45,7 @@ class QuickActions extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
+            context: context,
             label: "View Booked Appointments",
             onPressed: () {
               Navigator.push(
@@ -57,6 +59,7 @@ class QuickActions extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
+            context: context,
             label: "Generate Report",
             onPressed: onGenerateReportTapped ?? () {},
             isPrimary: false,
@@ -67,6 +70,7 @@ class QuickActions extends StatelessWidget {
   }
 
   Widget _buildActionButton({
+    required BuildContext context,
     required String label,
     required VoidCallback onPressed,
     required bool isPrimary,
@@ -76,15 +80,18 @@ class QuickActions extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? Colors.blue : Colors.white,
-          foregroundColor: isPrimary ? Colors.white : Colors.black,
+          backgroundColor:
+              isPrimary ? Colors.blue : Theme.of(context).cardColor,
+          foregroundColor: isPrimary
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurface,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: isPrimary
                 ? BorderSide.none
-                : BorderSide(color: Colors.grey.withOpacity(0.2)),
+                : BorderSide(color: Theme.of(context).dividerColor),
           ),
         ),
         child: Text(
@@ -95,3 +102,6 @@ class QuickActions extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

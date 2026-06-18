@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'doctor_chat_session.dart';
 import 'models/chat_model.dart';
 import 'view_models/chat_list_view_model.dart';
@@ -24,10 +26,14 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
 
   void _openChat(BuildContext context, ChatUser user) {
     DoctorChatSession.activePatientId = user.id;
+    final patientCubit = context.read<PatientCubit>();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatDetailPage(user: user, patientId: user.id),
+        builder: (_) => BlocProvider.value(
+          value: patientCubit,
+          child: ChatDetailPage(user: user, patientId: user.id),
+        ),
       ),
     );
   }
@@ -35,7 +41,7 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: ResponsiveLayout(
           mobile: _buildChatList(context),
@@ -89,3 +95,6 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
     );
   }
 }
+
+// commit update
+ 

@@ -17,9 +17,9 @@ class ReportPreviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -54,18 +54,21 @@ class _EmptyPreview extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.insert_drive_file_outlined,
+          const Icon(Icons.insert_drive_file_outlined,
               size: 40, color: Color(0xFF9CA3AF)),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             'No Report Selected',
-            style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF374151)),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           SizedBox(height: 6),
           Text(
@@ -95,10 +98,10 @@ class _ReportContent extends StatelessWidget {
         // ── Title & patient ──────────────────────────────────────────
         Text(
           report.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 18,
-            color: Color(0xFF111827),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 6),
@@ -153,8 +156,8 @@ class _ReportContent extends StatelessWidget {
         // ── Doctor's notes ───────────────────────────────────────────
         if (report.doctorNotes.isNotEmpty) ...[
           _SectionBox(
-            color: Colors.white,
-            borderColor: const Color(0xFFE5E7EB),
+            color: Theme.of(context).colorScheme.surface,
+            borderColor: Theme.of(context).dividerColor,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -172,8 +175,8 @@ class _ReportContent extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   report.doctorNotes,
-                  style: const TextStyle(
-                    color: Color(0xFF374151),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.5,
                   ),
                 ),
@@ -252,3 +255,6 @@ class _SectionBox extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

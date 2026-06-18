@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 import 'package:grad_project/patient/features/appointments/cubit/patient_appointments_cubit.dart';
+import 'package:grad_project/patient/features/history/cubit/patient_vitals_cubit.dart';
 
 class AppLayout extends StatelessWidget {
   const AppLayout({super.key});
@@ -27,6 +28,11 @@ class AppLayout extends StatelessWidget {
         ),
         BlocProvider<PatientAppointmentsCubit>(
           create: (context) => PatientAppointmentsCubit()..loadAppointments(),
+        ),
+        // Shared across Home and History so a measurement on Home refreshes
+        // the History list in real time (both read the same instance).
+        BlocProvider<PatientVitalsCubit>(
+          create: (context) => PatientVitalsCubit()..loadVitals(),
         ),
       ],
       child: const _AppLayoutContent(),
@@ -215,3 +221,6 @@ class _AppLayoutState extends State<_AppLayoutContent> {
     );
   }
 }
+
+// commit update
+ 

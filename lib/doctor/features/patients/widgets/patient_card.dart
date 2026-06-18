@@ -25,14 +25,14 @@ class PatientCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       elevation: 0,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,3 +167,6 @@ class PatientCard extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

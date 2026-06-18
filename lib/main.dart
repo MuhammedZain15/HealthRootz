@@ -9,9 +9,7 @@ import 'package:grad_project/core/theme/app_theme.dart';
 import 'package:grad_project/core/network/api_client.dart';
 import 'package:grad_project/firebase_options.dart';
 import 'package:grad_project/l10n/app_localizations.dart';
-import 'package:grad_project/patient/features/patient/data/repositories/patient_repository_impl.dart';
 import 'package:grad_project/splash.dart';
-import 'package:grad_project/patient/features/patient/viewmodel/patient_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,9 +37,6 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>(create: (_) => AuthCubit()),
-        BlocProvider<PatientCubit>(
-          create: (_) => PatientCubit(PatientRepositoryImpl()),
-        ),
         BlocProvider<ThemeCubit>(
           create: (_) => ThemeCubit(initialThemeMode),
         ),
@@ -56,11 +51,9 @@ class MyApp extends StatelessWidget {
               return MaterialApp(
                 title: 'Health Rootz',
                 debugShowCheckedModeBanner: false,
-                // ── Theme ──────────────────────────────────────────────
                 theme: AppTheme.lightTheme,
                 darkTheme: AppTheme.darkTheme,
                 themeMode: themeMode,
-                // ── Localizations ──────────────────────────────────────
                 locale: locale,
                 localizationsDelegates: const [
                   AppLocalizations.delegate,
@@ -78,3 +71,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

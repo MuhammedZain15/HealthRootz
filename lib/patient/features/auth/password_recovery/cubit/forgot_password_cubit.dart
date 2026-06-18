@@ -24,3 +24,6 @@ class ForgotPasswordCubit extends Cubit<ForgotPasswordModel> {
     emit(state.copyWith(clearError: true, clearSuccess: true));
   }
 }
+
+// commit update
+ 

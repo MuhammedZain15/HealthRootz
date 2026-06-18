@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:grad_project/app_colors.dart';
+import 'package:grad_project/core/models/vital_model.dart';
 import '../model/patient_model.dart';
+
+/// Formats a [num] without a trailing `.0` (e.g. 36.0 -> "36", 36.8 -> "36.8").
+String _fmtNum(num? value) {
+  if (value == null) return '—';
+  if (value == value.roundToDouble()) return value.toInt().toString();
+  return value.toString();
+}
 
 // Patient Header Widget
 class PatientHeader extends StatelessWidget {
@@ -13,8 +21,9 @@ class PatientHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -148,79 +157,239 @@ class VitalSignCard extends StatelessWidget {
   }
 }
 
-// Current Vital Signs Section
+// Current Vital Signs Section — reads the patient's latest vitals.
 class CurrentVitalSignsSection extends StatelessWidget {
-  const CurrentVitalSignsSection({super.key});
+  final VitalModel? latest;
+  final bool isLoading;
+
+  const CurrentVitalSignsSection({
+    super.key,
+    this.latest,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Current Vital Signs',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.3,
-          children: [
-            VitalSignCard(
-              icon: Icons.favorite,
-              label: 'Heart Rate',
-              value: '72',
-              unit: 'bpm',
-              backgroundColor: Colors.red.shade50,
-              iconColor: Colors.red.shade600,
+        if (isLoading && latest == null)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (latest == null)
+          _NoVitalsPlaceholder()
+        else
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.3,
+            children: [
+              VitalSignCard(
+                icon: Icons.favorite,
+                label: 'Heart Rate',
+                value: _fmtNum(latest!.heartRate),
+                unit: 'bpm',
+                backgroundColor: Colors.red.shade50,
+                iconColor: Colors.red.shade600,
+              ),
+              VitalSignCard(
+                icon: Icons.show_chart,
+                label: 'Blood Pressure',
+                value: latest!.bloodPressure ?? '—',
+                unit: 'mmHg',
+                backgroundColor: Colors.blue.shade50,
+                iconColor: Colors.blue.shade600,
+              ),
+              VitalSignCard(
+                icon: Icons.thermostat,
+                label: 'Temperature',
+                value: _fmtNum(latest!.temperature),
+                unit: '°C',
+                backgroundColor: Colors.orange.shade50,
+                iconColor: Colors.orange.shade600,
+              ),
+              VitalSignCard(
+                icon: Icons.water_drop,
+                label: 'Oxygen Level',
+                value: _fmtNum(latest!.oxygenLevel),
+                unit: '%',
+                backgroundColor: Colors.cyan.shade50,
+                iconColor: Colors.cyan.shade600,
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+// Placeholder shown when a patient has no recorded vitals.
+class _NoVitalsPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.monitor_heart_outlined,
+              size: 32, color: Colors.grey.shade400),
+          const SizedBox(height: 8),
+          Text(
+            'No vital signs recorded yet',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// AI Analysis Card — shows the backend's aiPrediction for the latest reading.
+class AiAnalysisCard extends StatelessWidget {
+  final VitalModel vital;
+
+  const AiAnalysisCard({super.key, required this.vital});
+
+  Color _riskColor(String? level) {
+    switch ((level ?? '').toLowerCase()) {
+      case 'high':
+        return Colors.red.shade600;
+      case 'medium':
+        return Colors.orange.shade700;
+      case 'low':
+        return Colors.green.shade600;
+      default:
+        return AppColors.skyBlue;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final risk = vital.riskLevel;
+    final confidence = vital.confidence;
+    final accent = _riskColor(risk);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.indigo.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.indigo.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 20, color: Colors.indigo.shade400),
+              const SizedBox(width: 8),
+              const Text(
+                'AI Analysis',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const Spacer(),
+              if (risk != null && risk.trim().isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${risk[0].toUpperCase()}${risk.substring(1)} risk',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: accent,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            (vital.prediction != null && vital.prediction!.trim().isNotEmpty)
+                ? vital.prediction!
+                : 'No prediction text provided.',
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: Colors.black87,
             ),
-            VitalSignCard(
-              icon: Icons.show_chart,
-              label: 'Blood Pressure',
-              value: '120/80',
-              unit: 'mmHg',
-              backgroundColor: Colors.blue.shade50,
-              iconColor: Colors.blue.shade600,
+          ),
+          if (confidence != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  'Confidence',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
+                const Spacer(),
+                Text(
+                  '${(confidence <= 1 ? confidence * 100 : confidence).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+                ),
+              ],
             ),
-            VitalSignCard(
-              icon: Icons.thermostat,
-              label: 'Temperature',
-              value: '98.6',
-              unit: '°F',
-              backgroundColor: Colors.orange.shade50,
-              iconColor: Colors.orange.shade600,
-            ),
-            VitalSignCard(
-              icon: Icons.water_drop,
-              label: 'Oxygen Level',
-              value: '98',
-              unit: '%',
-              backgroundColor: Colors.cyan.shade50,
-              iconColor: Colors.cyan.shade600,
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: (confidence <= 1 ? confidence : confidence / 100)
+                    .clamp(0.0, 1.0)
+                    .toDouble(),
+                minHeight: 6,
+                backgroundColor: Colors.indigo.shade100,
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+              ),
             ),
           ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 // EMG Reading Card
 class EmgReadingCard extends StatelessWidget {
-  final int value;
+  final num value;
 
   const EmgReadingCard({super.key, required this.value});
 
   @override
   Widget build(BuildContext context) {
+    final inRange = value >= 20 && value <= 80;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -245,7 +414,7 @@ class EmgReadingCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '$value',
+                _fmtNum(value),
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -261,19 +430,26 @@ class EmgReadingCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Real-time monitoring',
+            'Latest reading',
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
+              Icon(
+                inRange ? Icons.check_circle : Icons.warning_amber_rounded,
+                size: 16,
+                color: inRange ? Colors.green.shade600 : Colors.orange.shade700,
+              ),
               const SizedBox(width: 6),
               Text(
-                'Normal range (20-80 µV)',
+                inRange
+                    ? 'Normal range (20-80 µV)'
+                    : 'Outside normal range (20-80 µV)',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.green.shade700,
+                  color:
+                      inRange ? Colors.green.shade700 : Colors.orange.shade800,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -284,3 +460,6 @@ class EmgReadingCard extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 

@@ -54,7 +54,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
           final stats = state.stats;
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF9FAFB),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -95,7 +95,9 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                         fontSize:
                                             isDesktop ? 32 : screenWidth * 0.06,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF111827),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                       ),
                                     ),
                                     SizedBox(height: screenHeight * 0.005),
@@ -189,3 +191,6 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
     );
   }
 }
+
+// commit update
+ 

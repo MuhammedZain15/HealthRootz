@@ -23,11 +23,7 @@ class DoctorAlertsCubit extends Cubit<DoctorAlertsListModel> {
     emit(updated);
   }
 
-  Future<void> deleteAlert(String id) async {
-    emit(state.copyWith(isUpdating: true, clearError: true));
-    final (updated, _) = await _viewModel.deleteAlert(state, id);
-    emit(updated);
-  }
+
 
   void clearMessages() {
     emit(state.copyWith(clearError: true, clearSuccess: true));
@@ -35,3 +31,6 @@ class DoctorAlertsCubit extends Cubit<DoctorAlertsListModel> {
 
   Future<void> retry() => loadAlerts();
 }
+
+// commit update
+ 

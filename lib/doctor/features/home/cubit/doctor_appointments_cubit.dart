@@ -47,3 +47,6 @@ class DoctorAppointmentsCubit extends Cubit<DoctorAppointmentsListModel> {
 
   Future<void> retry() => loadAppointments();
 }
+
+// commit update
+ 

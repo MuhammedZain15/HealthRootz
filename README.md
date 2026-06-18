@@ -32,7 +32,7 @@
 
 ## 🚀 Project Overview
 
-**HealthRootz** is a dual-interface mobile application designed to cater to both **Patients** and **Doctors**. 
+**HealthRootz** is a dual-interface mobile application designed to cater to both **Patients** and **Doctors**.
 - **For Patients:** It acts as a personal health companion, allowing them to track vitals, connect with IoT medical devices, schedule appointments, communicate with doctors, and get preliminary guidance from an AI-powered medical assistant.
 - **For Doctors:** It provides a comprehensive dashboard to monitor patient reports, manage appointments, respond to alerts, and handle patient communications efficiently.
 

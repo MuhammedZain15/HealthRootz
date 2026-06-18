@@ -18,7 +18,6 @@ class ApiClient {
   /// Must be called once before any API call (e.g. in main.dart).
   Future<void> init() async {
     if (_initialized) return;
-
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -60,3 +59,6 @@ class ApiClient {
     _initialized = true;
   }
 }
+
+// commit update
+ 

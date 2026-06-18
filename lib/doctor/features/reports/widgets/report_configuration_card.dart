@@ -82,9 +82,9 @@ class _ReportConfigurationCardState extends State<ReportConfigurationCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -312,7 +312,7 @@ class _ReportConfigurationCardState extends State<ReportConfigurationCard> {
       prefixIcon: prefixIcon,
       hintText: hintText,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Theme.of(context).colorScheme.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -350,16 +350,22 @@ class _FormatButton extends StatelessWidget {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF1D4ED8) : Colors.white,
+          color: selected
+              ? const Color(0xFF1D4ED8)
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected ? const Color(0xFF1D4ED8) : const Color(0xFFE5E7EB),
+            color: selected
+                ? const Color(0xFF1D4ED8)
+                : Theme.of(context).dividerColor,
           ),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF1F2937),
+            color: selected
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -367,3 +373,6 @@ class _FormatButton extends StatelessWidget {
     );
   }
 }
+
+// commit update
+ 
