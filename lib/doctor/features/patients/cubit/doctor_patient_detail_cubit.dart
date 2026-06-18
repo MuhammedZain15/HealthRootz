@@ -64,3 +64,6 @@ class DoctorPatientDetailCubit extends Cubit<DoctorPatientDetailModel> {
     return super.close();
   }
 }
+
+// commit update
+ 

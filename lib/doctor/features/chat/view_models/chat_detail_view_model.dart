@@ -318,3 +318,6 @@ class ChatDetailCubit extends Cubit<ChatDetailState> implements Listenable {
 class ChatDetailViewModel extends ChatDetailCubit {
   ChatDetailViewModel() : super();
 }
+
+// commit update
+ 

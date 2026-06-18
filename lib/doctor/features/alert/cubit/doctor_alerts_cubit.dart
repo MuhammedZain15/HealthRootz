@@ -31,3 +31,6 @@ class DoctorAlertsCubit extends Cubit<DoctorAlertsListModel> {
 
   Future<void> retry() => loadAlerts();
 }
+
+// commit update
+ 

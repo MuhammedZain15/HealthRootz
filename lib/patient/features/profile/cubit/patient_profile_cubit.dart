@@ -258,3 +258,6 @@ class PatientProfileCubit extends Cubit<PatientProfileModel> {
   /// Check if profile is complete
   bool get isProfileComplete => state.isProfileComplete;
 }
+
+// commit update
+ 

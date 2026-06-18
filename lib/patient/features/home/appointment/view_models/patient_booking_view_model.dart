@@ -172,3 +172,6 @@ class PatientBookingViewModel {
     }
   }
 }
+
+// commit update
+ 

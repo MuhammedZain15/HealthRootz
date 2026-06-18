@@ -8,7 +8,7 @@ class ApiConfig {
   ApiConfig._();
 
   /// Your machine's LAN IP (update when your network changes).
-  static const String host = '192.168.1.4';
+  static const String host = '172.20.10.9';
 
 
   /// Backend port (must match your server, e.g. 5000 or 8000).
@@ -19,3 +19,6 @@ class ApiConfig {
 
   static String get baseUrl => 'http://$host:$port$apiPath';
 }
+
+// commit update
+ 

@@ -13,3 +13,6 @@ bool isResolvableDoctorId(String? id) {
   final trimmed = id.trim();
   return trimmed.isNotEmpty && trimmed != kLegacyPlaceholderDoctorId;
 }
+
+// commit update
+ 
